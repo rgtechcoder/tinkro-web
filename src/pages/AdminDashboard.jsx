@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Package, 
   Users, 
+  User,
   IndianRupee, 
   Calendar, 
   LogOut,
@@ -37,6 +38,7 @@ import {
 } from 'lucide-react';
 import OrderManager from '../services/OrderManager';
 import AdminLogin from '../components/AdminLogin';
+import ProductService from '../services/ProductService';
 import ContactQueryService from '../services/ContactQueryService';
 import BlogService from '../services/BlogService';
 
@@ -96,7 +98,9 @@ const AdminDashboard = () => {
     category: 'Arduino Kits',
     image: '',
     description: '',
-    stock: ''
+    stock: '',
+    featured: false,
+    status: 'published'
   });
   const [realtimeData, setRealtimeData] = useState({
     activeUsers: Math.floor(Math.random() * 50) + 10,
@@ -377,9 +381,23 @@ const AdminDashboard = () => {
   const loadBlogs = async () => {
     try {
       console.log("Loading blogs...");
+      // Check if BlogService is properly imported
+      if (!BlogService) {
+        console.error('BlogService not found');
+        setBlogs([]);
+        return;
+      }
+      
       const blogPosts = BlogService.getAllBlogs();
       console.log(`Blogs loaded: ${blogPosts.length} blogs found`);
-      setBlogs(blogPosts);
+      
+      // Ensure blogPosts is an array
+      if (Array.isArray(blogPosts)) {
+        setBlogs(blogPosts);
+      } else {
+        console.error('BlogService.getAllBlogs() did not return an array:', blogPosts);
+        setBlogs([]);
+      }
     } catch (error) {
       console.error('Error loading blogs:', error);
       setBlogs([]);
@@ -423,35 +441,85 @@ const AdminDashboard = () => {
 
   // Edit blog
   const handleEditBlog = (blog) => {
-    setEditingBlog({ ...blog });
+    console.log('📝 RAW BLOG DATA RECEIVED:', blog);
+    console.log('📝 Blog ID:', blog?.id, 'Type:', typeof blog?.id);
+    console.log('📝 Blog Title:', blog?.title);
+    console.log('📝 Full Blog Object Keys:', Object.keys(blog || {}));
+    
+    if (!blog) {
+      console.error('❌ No blog object passed');
+      alert('❌ Error: No blog data received.');
+      return;
+    }
+    
+    if (!blog.id && blog.id !== 0) {
+      console.error('❌ Blog missing ID:', blog);
+      alert('❌ Error: Blog ID is missing. Cannot edit this blog.');
+      return;
+    }
+    
+    // Create a clean copy of the blog with all required fields
+    const blogCopy = {
+      id: blog.id,
+      title: blog.title || '',
+      excerpt: blog.excerpt || '',
+      content: blog.content || '',
+      author: blog.author || 'Tinkro Team',
+      date: blog.date || new Date().toISOString().split('T')[0],
+      image: blog.image || '',
+      category: blog.category || 'Tutorial',
+      readTime: blog.readTime || '5 min read',
+      status: blog.status || 'published',
+      tags: blog.tags || [],
+      createdAt: blog.createdAt || new Date().toISOString(),
+      updatedAt: blog.updatedAt || new Date().toISOString()
+    };
+    
+    console.log('✅ Setting editingBlog with clean copy:', blogCopy);
+    setEditingBlog(blogCopy);
     setShowEditBlog(true);
   };
 
   // Update blog
-  const handleUpdateBlog = () => {
+  const handleUpdateBlog = async () => {
     try {
+      console.log('🔄 Starting blog update...', editingBlog);
+      
       if (!editingBlog || !editingBlog.id) {
-        alert('Error: No blog selected for editing');
+        alert('❌ Error: No blog selected for editing');
         return;
       }
 
+      console.log('📝 Blog ID for update:', editingBlog.id, typeof editingBlog.id);
+
       const errors = BlogService.validateBlogData(editingBlog);
       if (errors.length > 0) {
-        alert('Please fix the following errors:\n' + errors.join('\n'));
+        alert('⚠️ Please fix the following errors:\n' + errors.join('\n'));
         return;
       }
 
       const updatedBlog = BlogService.updateBlog(editingBlog.id, editingBlog);
-      console.log('Blog updated successfully:', updatedBlog.title);
+      console.log('✅ Blog updated successfully:', updatedBlog.title);
       
+      // Clean up state properly
       setEditingBlog(null);
       setShowEditBlog(false);
-      loadBlogs(); // Reload blogs
-      alert('Blog updated successfully!');
+      
+      // Reload blogs to reflect changes
+      await loadBlogs(); 
+      
+      alert('✅ Blog updated successfully!');
     } catch (error) {
-      console.error('Error updating blog:', error);
-      alert('Error updating blog: ' + error.message);
+      console.error('❌ Error updating blog:', error);
+      alert('❌ Error updating blog: ' + error.message + '\n\nCheck console for details.');
     }
+  };
+
+  // Cancel blog editing
+  const handleCancelEdit = () => {
+    console.log('🚫 Canceling blog edit');
+    setEditingBlog(null);
+    setShowEditBlog(false);
   };
 
   // Delete blog
@@ -600,35 +668,138 @@ const AdminDashboard = () => {
     }
   }, []);
 
-  // Add Product Functions
+  // Enhanced Product Management with ProductService
+  const [products, setProducts] = useState([]);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [showEditProduct, setShowEditProduct] = useState(false);
+
+  // Load products from ProductService
+  const loadProducts = async () => {
+    try {
+      const allProducts = ProductService.getAllProducts();
+      setProducts(allProducts);
+      console.log('✅ Products loaded from ProductService:', allProducts.length);
+    } catch (error) {
+      console.error('❌ Error loading products:', error);
+    }
+  };
+
+  // Load products on component mount
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  // Enhanced Add Product with ProductService
   const handleAddProduct = () => {
-    console.log("Adding new product:", newProduct);
-    
-    // Save to localStorage for main website
-    const existingProducts = JSON.parse(localStorage.getItem('tinkro-products') || '[]');
-    const productWithId = {
-      ...newProduct,
-      id: Date.now(),
-      createdAt: new Date().toISOString(),
-      price: parseFloat(newProduct.price),
-      stock: parseInt(newProduct.stock)
-    };
-    
-    existingProducts.push(productWithId);
-    localStorage.setItem('tinkro-products', JSON.stringify(existingProducts));
-    
-    // Reset form
-    setNewProduct({
-      name: '',
-      price: '',
-      category: 'Arduino Kits',
-      image: '',
-      description: '',
-      stock: ''
-    });
-    
-    setShowAddProduct(false);
-    alert(`✅ Product "${productWithId.name}" added successfully to main website!`);
+    try {
+      console.log("🎯 Adding new product:", newProduct);
+      
+      const errors = ProductService.validateProductData(newProduct);
+      if (errors.length > 0) {
+        alert('⚠️ Please fix the following errors:\n' + errors.join('\n'));
+        return;
+      }
+      
+      const addedProduct = ProductService.addProduct(newProduct);
+      console.log('✅ Product added successfully:', addedProduct.name);
+      
+      // Reset form
+      setNewProduct({
+        name: '',
+        price: '',
+        category: 'Arduino Kits',
+        image: '',
+        description: '',
+        stock: '',
+        featured: false,
+        status: 'published'
+      });
+      
+      setShowAddProduct(false);
+      loadProducts(); // Reload products
+      
+      alert(`✅ Product "${addedProduct.name}" added successfully!`);
+    } catch (error) {
+      console.error('❌ Error adding product:', error);
+      alert('❌ Error adding product: ' + error.message);
+    }
+  };
+
+  // Edit Product Functions
+  const handleEditProduct = (product) => {
+    console.log('📝 Editing product:', product.name);
+    setEditingProduct({...product});
+    setShowEditProduct(true);
+  };
+
+  const handleUpdateProduct = async () => {
+    try {
+      console.log('🔄 Starting product update...', editingProduct);
+      
+      if (!editingProduct || !editingProduct.id) {
+        alert('❌ Error: No product selected for editing');
+        return;
+      }
+
+      const errors = ProductService.validateProductData(editingProduct);
+      if (errors.length > 0) {
+        alert('⚠️ Please fix the following errors:\n' + errors.join('\n'));
+        return;
+      }
+
+      const updatedProduct = ProductService.updateProduct(editingProduct.id, editingProduct);
+      console.log('✅ Product updated successfully:', updatedProduct.name);
+      
+      // Clean up state
+      setEditingProduct(null);
+      setShowEditProduct(false);
+      
+      // Reload products
+      await loadProducts();
+      
+      alert('✅ Product updated successfully!');
+    } catch (error) {
+      console.error('❌ Error updating product:', error);
+      alert('❌ Error updating product: ' + error.message);
+    }
+  };
+
+  // Delete Product
+  const handleDeleteProduct = (productId) => {
+    if (window.confirm('⚠️ Are you sure you want to delete this product? This action cannot be undone.')) {
+      try {
+        ProductService.deleteProduct(productId);
+        loadProducts();
+        alert('✅ Product deleted successfully!');
+      } catch (error) {
+        console.error('❌ Error deleting product:', error);
+        alert('❌ Error deleting product: ' + error.message);
+      }
+    }
+  };
+
+  // Toggle Featured Status
+  const handleToggleFeatured = (productId) => {
+    try {
+      const updatedProduct = ProductService.toggleFeatured(productId);
+      loadProducts();
+      console.log(`✅ Featured status updated: ${updatedProduct.featured ? 'Featured' : 'Not Featured'}`);
+    } catch (error) {
+      console.error('❌ Error toggling featured status:', error);
+      alert('❌ Error updating featured status: ' + error.message);
+    }
+  };
+
+  // Update Product Order
+  const handleUpdateProductOrder = (productId, newOrder) => {
+    try {
+      ProductService.updateProductOrder(productId, newOrder);
+      loadProducts();
+      console.log(`✅ Product order updated: ${newOrder}`);
+    } catch (error) {
+      console.error('❌ Error updating product order:', error);
+      alert('❌ Error updating product order: ' + error.message);
+    }
   };
 
   const handleImageUpload = (e) => {
@@ -1193,13 +1364,21 @@ const AdminDashboard = () => {
               <button 
                 onClick={() => {
                   console.log('Blog Management modal opening...');
-                  setShowBlogModal(true);
+                  try {
+                    // Load blogs before opening modal
+                    loadBlogs();
+                    setShowBlogModal(true);
+                    console.log('Blog modal opened successfully');
+                  } catch (error) {
+                    console.error('Error opening blog modal:', error);
+                    alert('Error opening Blog Management. Please check console.');
+                  }
                 }}
                 className="w-full p-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center space-x-2 group"
               >
                 <BookOpen className="h-4 w-4 group-hover:animate-pulse" />
                 <span>Blog Management</span>
-                <div className="ml-auto text-xs opacity-70">📝 {blogs.length}</div>
+                <div className="ml-auto text-xs opacity-70">📝 {blogs?.length || 0}</div>
               </button>
 
               <button 
@@ -2042,6 +2221,7 @@ const AdminDashboard = () => {
         {/* Blog Management Modal */}
         {showBlogModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            {console.log('Blog Modal is rendering...', { blogs: blogs, blogsLength: blogs?.length })}
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] overflow-hidden flex flex-col">
               {/* Modal Header */}
               <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
@@ -2134,6 +2314,42 @@ const AdminDashboard = () => {
                       <RefreshCw className="h-4 w-4" />
                       <span>Refresh</span>
                     </button>
+                    
+                    <button
+                      onClick={() => {
+                        if (confirm('🚨 FORCE RESET: Clear all blogs and restore 6 original blogs?\n\nThis will delete ALL custom blogs including "AI Innovation"!')) {
+                          try {
+                            console.log('🔄 Starting force reset...');
+                            
+                            // Step 1: Clear localStorage completely
+                            localStorage.removeItem('tinkro_blog_posts');
+                            console.log('✅ localStorage cleared');
+                            
+                            // Step 2: Reset to default
+                            const defaultBlogs = BlogService.resetToDefault();
+                            console.log('✅ Default blogs restored:', defaultBlogs.length);
+                            
+                            // Step 3: Reload blogs
+                            loadBlogs();
+                            
+                            // Step 4: Force page refresh to clear any cache
+                            setTimeout(() => {
+                              window.location.reload();
+                            }, 1000);
+                            
+                            alert('✅ FORCE RESET COMPLETE!\n\n6 original blogs restored.\nPage will refresh in 1 second...');
+                          } catch (error) {
+                            console.error('❌ Force reset error:', error);
+                            alert('❌ Error in force reset. Check console.');
+                          }
+                        }
+                      }}
+                      className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      <span>🚨 FORCE RESET</span>
+                    </button>
+                    
                     <button
                       onClick={() => setShowAddBlog(true)}
                       className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all"
@@ -2202,7 +2418,11 @@ const AdminDashboard = () => {
                             {/* Actions */}
                             <div className="flex items-center space-x-3 mt-4">
                               <button
-                                onClick={() => handleEditBlog(post)}
+                                onClick={() => {
+                                  console.log('🔘 EDIT BUTTON CLICKED for post:', post);
+                                  console.log('🔘 Post ID before sending:', post?.id);
+                                  handleEditBlog(post);
+                                }}
                                 className="flex items-center space-x-1 px-3 py-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all"
                               >
                                 <Edit className="h-4 w-4" />
@@ -2388,23 +2608,105 @@ const AdminDashboard = () => {
                 {/* Blog Image URL */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Image URL
+                    Image URL 🖼️ <span className="text-xs text-gray-500">(Accepts: JPG, PNG, WebP, GIF)</span>
                   </label>
-                  <input
-                    type="url"
-                    placeholder="https://example.com/image.jpg"
-                    value={newBlog.image}
-                    onChange={(e) => setNewBlog({...newBlog, image: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
+                  
+                  {/* Quick Upload Instructions */}
+                  <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="text-xs text-blue-700 font-medium mb-2">📤 Local Image को Upload करें:</div>
+                    <div className="text-xs text-blue-600 space-y-1">
+                      <div>• <strong>Imgur:</strong> imgur.com → Upload → Direct Link copy करें</div>
+                      <div>• <strong>GitHub:</strong> Repo → Upload file → Raw URL copy करें</div>
+                      <div>• <strong>Unsplash:</strong> unsplash.com → Free images</div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      placeholder="https://i.imgur.com/abc123.jpg या https://images.unsplash.com/photo-xyz.jpg"
+                      value={newBlog.image}
+                      onChange={(e) => {
+                        const imageUrl = e.target.value.trim();
+                        console.log('🖼️ New image URL entered:', imageUrl);
+                        setNewBlog({...newBlog, image: imageUrl});
+                      }}
+                      className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    />
+                    
+                    {/* Local File Upload Button */}
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            console.log('📁 New blog - Local file selected:', file.name, 'Size:', file.size);
+                            
+                            // Check file size (max 5MB)
+                            if (file.size > 5 * 1024 * 1024) {
+                              alert('❌ File too large! Please select image less than 5MB');
+                              return;
+                            }
+                            
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              const base64Image = event.target.result;
+                              console.log('✅ Base64 conversion complete for new blog');
+                              console.log('🆕 New image:', base64Image.substring(0, 50) + '...');
+                              
+                              // Force state update
+                              setNewBlog(prev => ({
+                                ...prev,
+                                image: base64Image
+                              }));
+                              
+                              alert('✅ Image uploaded successfully!');
+                            };
+                            reader.onerror = () => {
+                              console.error('❌ Error reading file');
+                              alert('❌ Error reading file. Please try again.');
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        id="imageUpload"
+                      />
+                      <label
+                        htmlFor="imageUpload"
+                        className="px-4 py-3 bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap"
+                      >
+                        📁 Upload
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-2 text-xs text-gray-500">
+                    💡 <strong>Option 1:</strong> URL paste करें | <strong>Option 2:</strong> File upload करें (base64)
+                  </div>
+                  
+                  {/* Image Preview */}
                   {newBlog.image && (
-                    <div className="mt-2">
+                    <div className="mt-3">
+                      <div className="text-xs text-gray-600 mb-2">
+                        Image Preview: 
+                        <span className="ml-1 text-blue-600">
+                          {newBlog.image.startsWith('data:') ? '📁 Local File (Base64)' : '🌐 URL Image'}
+                        </span>
+                      </div>
                       <img
+                        key={newBlog.image} // Force re-render when image changes
                         src={newBlog.image}
                         alt="Preview"
-                        className="w-32 h-20 object-cover rounded-lg"
+                        className="w-40 h-24 object-cover rounded-lg shadow-md border-2 border-gray-200"
+                        onLoad={() => {
+                          console.log('✅ New blog preview image loaded successfully');
+                        }}
                         onError={(e) => {
                           e.target.style.display = 'none';
+                          console.log('❌ New blog preview image failed to load');
                         }}
                       />
                     </div>
@@ -2446,10 +2748,7 @@ const AdminDashboard = () => {
                   <h2 className="text-2xl font-bold">Edit Blog Post</h2>
                 </div>
                 <button
-                  onClick={() => {
-                    setShowEditBlog(false);
-                    setEditingBlog(null);
-                  }}
+                  onClick={handleCancelEdit}
                   className="text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   <X className="h-6 w-6" />
@@ -2564,22 +2863,104 @@ const AdminDashboard = () => {
                 {/* Blog Image URL */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Image URL
+                    Image URL 🖼️ <span className="text-xs text-gray-500">(Update होने के लिए cache clear होगा)</span>
                   </label>
-                  <input
-                    type="url"
-                    placeholder="https://example.com/image.jpg"
-                    value={editingBlog.image}
-                    onChange={(e) => setEditingBlog({...editingBlog, image: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  
+                  {/* Quick Upload Instructions for Edit */}
+                  <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="text-xs text-green-700 font-medium mb-2">📤 Local Image को Replace करें:</div>
+                    <div className="text-xs text-green-600 space-y-1">
+                      <div>• <strong>Imgur:</strong> imgur.com → Upload → Direct Link copy करें</div>
+                      <div>• <strong>GitHub:</strong> Repo में upload → Raw URL copy करें</div>
+                      <div>• <strong>Current:</strong> {editingBlog.image ? editingBlog.image.substring(0, 50) + '...' : 'No image'}</div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      placeholder="https://i.imgur.com/abc123.jpg या https://images.unsplash.com/photo-xyz.jpg"
+                      value={editingBlog.image}
+                      onChange={(e) => {
+                        const imageUrl = e.target.value.trim();
+                        console.log('🖼️ Editing image URL:', imageUrl);
+                        console.log('🖼️ Previous image URL:', editingBlog.image);
+                        setEditingBlog({...editingBlog, image: imageUrl});
+                      }}
+                      className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    
+                    {/* Local File Upload Button for Edit */}
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            console.log('📁 Editing - Local file selected:', file.name, 'Size:', file.size);
+                            
+                            // Check file size (max 5MB)
+                            if (file.size > 5 * 1024 * 1024) {
+                              alert('❌ File too large! Please select image less than 5MB');
+                              return;
+                            }
+                            
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              const base64Image = event.target.result;
+                              console.log('✅ Base64 conversion complete for edit');
+                              console.log('🔄 Previous image:', editingBlog.image ? editingBlog.image.substring(0, 50) + '...' : 'None');
+                              console.log('🆕 New image:', base64Image.substring(0, 50) + '...');
+                              
+                              // Force state update with new object
+                              setEditingBlog(prev => ({
+                                ...prev,
+                                image: base64Image
+                              }));
+                              
+                              alert('✅ Image uploaded successfully!');
+                            };
+                            reader.onerror = () => {
+                              console.error('❌ Error reading file');
+                              alert('❌ Error reading file. Please try again.');
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        id="imageUploadEdit"
+                      />
+                      <label
+                        htmlFor="imageUploadEdit"
+                        className="px-4 py-3 bg-green-600 text-white rounded-lg cursor-pointer hover:bg-green-700 transition-colors text-sm font-medium whitespace-nowrap"
+                      >
+                        📁 Replace
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-2 text-xs text-gray-500">
+                    💡 <strong>Option 1:</strong> URL paste करें | <strong>Option 2:</strong> File upload करें (base64)
+                  </div>
                   {editingBlog.image && (
-                    <div className="mt-2">
+                    <div className="mt-3">
+                      <div className="text-xs text-gray-600 mb-2">
+                        Current Image Preview: 
+                        <span className="ml-1 text-blue-600">
+                          {editingBlog.image.startsWith('data:') ? '📁 Local File (Base64)' : '🌐 URL Image'}
+                        </span>
+                      </div>
                       <img
+                        key={editingBlog.image} // Force re-render when image changes
                         src={editingBlog.image}
                         alt="Preview"
-                        className="w-32 h-20 object-cover rounded-lg"
+                        className="w-40 h-24 object-cover rounded-lg shadow-md border-2 border-gray-200"
+                        onLoad={() => {
+                          console.log('✅ Edit preview image loaded successfully');
+                        }}
                         onError={(e) => {
+                          console.log('❌ Edit preview image failed to load');
                           e.target.style.display = 'none';
                         }}
                       />
@@ -2591,10 +2972,7 @@ const AdminDashboard = () => {
               {/* Modal Footer */}
               <div className="flex items-center justify-end space-x-3 p-6 bg-gray-50 rounded-b-2xl">
                 <button
-                  onClick={() => {
-                    setShowEditBlog(false);
-                    setEditingBlog(null);
-                  }}
+                  onClick={handleCancelEdit}
                   className="px-6 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
                 >
                   Cancel

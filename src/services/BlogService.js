@@ -161,6 +161,14 @@ class BlogService {
       const blogs = this.getAllBlogs();
       const newId = Math.max(...blogs.map(b => b.id), 0) + 1;
       
+      // Ensure image URL is properly set
+      let imageUrl = '';
+      if (blogData.image && blogData.image.trim() !== '') {
+        imageUrl = blogData.image.trim();
+      } else {
+        imageUrl = `https://images.unsplash.com/photo-1677442136019-21780ecad995?w=500&q=80&t=${Date.now()}`;
+      }
+
       const newBlog = {
         id: newId,
         title: blogData.title || '',
@@ -168,7 +176,7 @@ class BlogService {
         content: blogData.content || '',
         author: blogData.author || 'Tinkro Team',
         date: blogData.date || new Date().toISOString().split('T')[0],
-        image: blogData.image || 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=500&q=80',
+        image: imageUrl,
         category: blogData.category || 'Tutorial',
         readTime: blogData.readTime || '5 min read',
         status: blogData.status || 'published',
@@ -176,6 +184,8 @@ class BlogService {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
+
+      console.log('BlogService: Creating new blog with image:', newBlog.image);
 
       blogs.unshift(newBlog);
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(blogs));
@@ -187,27 +197,52 @@ class BlogService {
     }
   }
 
-  // Update existing blog post
+  // Update existing blog post with image URL validation
   static updateBlog(id, blogData) {
     try {
       const blogs = this.getAllBlogs();
+      console.log('BlogService: Updating blog with ID:', id, 'from', blogs.length, 'blogs');
+      console.log('BlogService: New blog data:', blogData);
       
-      // Try multiple comparison methods to handle different ID types
-      let blogIndex = blogs.findIndex(blog => blog.id === parseInt(id));
-      if (blogIndex === -1) {
-        blogIndex = blogs.findIndex(blog => blog.id.toString() === id.toString());
-      }
-      if (blogIndex === -1) {
-        blogIndex = blogs.findIndex(blog => blog.id == id); // Loose equality
-      }
+      // Safer ID comparison - handle null/undefined IDs
+      let blogIndex = blogs.findIndex(blog => {
+        if (!blog || blog.id == null) return false;
+        return blog.id === parseInt(id) || blog.id.toString() === id.toString() || blog.id == id;
+      });
       
       if (blogIndex === -1) {
-        throw new Error('Blog not found');
+        console.error('BlogService: Blog not found with ID:', id);
+        console.error('Available blog IDs:', blogs.map(b => b?.id));
+        throw new Error(`Blog not found with ID: ${id}`);
+      }
+
+      console.log('BlogService: Found blog at index:', blogIndex);
+      console.log('BlogService: Old image URL:', blogs[blogIndex].image);
+      console.log('BlogService: New image URL:', blogData.image);
+
+      // Validate and process image URL
+      let processedImageUrl = blogData.image;
+      if (blogData.image && blogData.image.trim()) {
+        processedImageUrl = blogData.image.trim();
+        
+        // Handle base64 images (from file upload)
+        if (processedImageUrl.startsWith('data:image/')) {
+          console.log('BlogService: Base64 image detected, using as-is');
+          // No cache busting needed for base64 images
+        } else {
+          // Add cache busting parameter to force image reload for URL images
+          if (processedImageUrl !== blogs[blogIndex].image) {
+            const separator = processedImageUrl.includes('?') ? '&' : '?';
+            processedImageUrl = `${processedImageUrl}${separator}v=${Date.now()}`;
+            console.log('BlogService: Added cache busting to image URL:', processedImageUrl);
+          }
+        }
       }
 
       const updatedBlog = {
         ...blogs[blogIndex],
         ...blogData,
+        image: processedImageUrl, // Explicitly set the processed image URL
         id: parseInt(id), // Ensure ID doesn't change
         updatedAt: new Date().toISOString()
       };
@@ -215,6 +250,7 @@ class BlogService {
       blogs[blogIndex] = updatedBlog;
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(blogs));
       console.log('BlogService: Blog updated successfully:', updatedBlog.title);
+      console.log('BlogService: Final image URL:', updatedBlog.image);
       return updatedBlog;
     } catch (error) {
       console.error('BlogService: Error updating blog:', error);
@@ -397,6 +433,46 @@ class BlogService {
     } catch (error) {
       console.error('BlogService: Error importing blogs:', error);
       throw error;
+    }
+  }
+
+  // Reset to default blogs (for debugging)
+  static resetToDefault() {
+    try {
+      // Force clear first
+      localStorage.removeItem(this.STORAGE_KEY);
+      console.log('BlogService: localStorage cleared');
+      
+      const defaultBlogs = this.getDefaultBlogs();
+      
+      // Ensure all blogs have unique IDs and published status
+      const cleanBlogs = defaultBlogs.map((blog, index) => ({
+        ...blog,
+        id: index + 1,
+        status: 'published',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }));
+      
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(cleanBlogs));
+      console.log('BlogService: Reset to default blogs completed, count:', cleanBlogs.length);
+      
+      return cleanBlogs;
+    } catch (error) {
+      console.error('BlogService: Error resetting to default blogs:', error);
+      throw error;
+    }
+  }
+
+  // Force clear all blog data
+  static forceClearAll() {
+    try {
+      localStorage.removeItem(this.STORAGE_KEY);
+      console.log('BlogService: All blog data cleared');
+      return true;
+    } catch (error) {
+      console.error('BlogService: Error clearing blog data:', error);
+      return false;
     }
   }
 }

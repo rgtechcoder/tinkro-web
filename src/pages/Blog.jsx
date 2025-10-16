@@ -49,13 +49,64 @@ const Blog = () => {
     ? blogPosts 
     : blogPosts.filter(post => post.category === selectedCategory);
 
+  // Blog detail modal state
+  const [selectedBlog, setSelectedBlog] = useState(null);
+  const [showBlogDetail, setShowBlogDetail] = useState(false);
+  
+  // Slider state
+  const [currentPage, setCurrentPage] = useState(0);
+  const blogsPerPage = 3; // Show only 3 blogs at once
+  const totalPages = Math.ceil(filteredPosts.length / blogsPerPage);
+  
+  // Auto slider states  
+  const [isPaused, setIsPaused] = useState(false);
+
   const handleReadMore = (post) => {
-    toast({
-      title: "🚧 Blog Post Coming Soon!",
-      description: "Full blog articles will be available shortly. Stay tuned! 🚀",
-      duration: 2500,
-    });
+    console.log('📖 Opening blog detail for:', post.title);
+    setSelectedBlog(post);
+    setShowBlogDetail(true);
   };
+
+  const closeBlogDetail = () => {
+    setSelectedBlog(null);
+    setShowBlogDetail(false);
+  };
+
+  // Slider navigation
+  const nextPage = () => {
+    setCurrentPage((prev) => (prev + 1) % totalPages);
+  };
+
+  const prevPage = () => {
+    setCurrentPage((prev) => (prev - 1 + totalPages) % totalPages);
+  };
+
+  const goToPage = (page) => {
+    setCurrentPage(page);
+  };
+
+  // Get current blogs to display
+  const getCurrentBlogs = () => {
+    const startIndex = currentPage * blogsPerPage;
+    const endIndex = startIndex + blogsPerPage;
+    return filteredPosts.slice(startIndex, endIndex);
+  };
+
+  // Reset to first page when category changes
+  React.useEffect(() => {
+    setCurrentPage(0);
+  }, [selectedCategory]);
+
+  // Auto-slide functionality - continuous automatic sliding
+  React.useEffect(() => {
+    if (isPaused || totalPages <= 1) return;
+    
+    const interval = setInterval(() => {
+      setCurrentPage((prev) => (prev + 1) % totalPages);
+    }, 3000); // 4 seconds medium speed
+    
+    return () => clearInterval(interval);
+  }, [isPaused, totalPages]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -124,6 +175,17 @@ const Blog = () => {
             >
               Tutorials, project ideas, and insights into the world of robotics and STEM education
             </motion.p>
+            
+            {!isLoading && (
+              <motion.div 
+                className="mt-4 text-sm text-gray-500"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                {filteredPosts.length} articles • Page {currentPage + 1} of {totalPages}
+              </motion.div>
+            )}
           </motion.div>
 
           {/* Loading State */}
@@ -161,24 +223,35 @@ const Blog = () => {
             </div>
           </motion.div>
 
+
+
+          {/* Navigation Controls */}
+
+
           <AnimatePresence mode="wait">
             <motion.div 
-              key={selectedCategory}
+              key={`${selectedCategory}-${currentPage}`}
               variants={containerVariants}
               initial="hidden"
               animate="visible"
               exit={{ opacity: 0, scale: 0.9 }}
               className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
             >
-              {filteredPosts.map((post, index) => (
+              {getCurrentBlogs().map((post, index) => (
                 <motion.article
                   key={post.id}
                   variants={cardVariants}
                   initial="hidden"
                   animate="visible"
                   whileHover="hover"
-                  onHoverStart={() => setHoveredCard(post.id)}
-                  onHoverEnd={() => setHoveredCard(null)}
+                  onHoverStart={() => {
+                    setHoveredCard(post.id);
+                    setIsPaused(true); // Pause auto-slider on hover
+                  }}
+                  onHoverEnd={() => {
+                    setHoveredCard(null);
+                    setIsPaused(false); // Resume auto-slider when hover ends
+                  }}
                   className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow relative group"
                   style={{
                     background: hoveredCard === post.id 
@@ -188,12 +261,17 @@ const Blog = () => {
                 >
                   <div className="relative h-48 overflow-hidden">
                     <motion.img
+                      key={`${post.id}-${post.image}`} // Force re-render on image change
                       src={post.image}
                       alt={post.title}
                       className="w-full h-full object-cover"
                       whileHover={{ scale: 1.1 }}
                       transition={{ duration: 0.6, ease: "easeOut" }}
+                      onLoad={() => {
+                        console.log(`✅ Image loaded successfully for blog ${post.id}:`, post.image);
+                      }}
                       onError={(e) => {
+                        console.log(`❌ Image failed to load for blog ${post.id}:`, post.image);
                         e.target.src = 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=500&h=300&fit=crop&auto=format';
                       }}
                     />
@@ -276,10 +354,130 @@ const Blog = () => {
               ))}
             </motion.div>
           </AnimatePresence>
+
+          {/* Navigation Controls - Below Blogs */}
+          {totalPages > 1 && (
+            <motion.div 
+              className="flex justify-center items-center space-x-4 mt-12"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <button
+                onClick={prevPage}
+                className="p-3 bg-white/80 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl transition-all hover:bg-blue-50 group"
+              >
+                <ArrowRight className="h-5 w-5 text-blue-600 rotate-180 group-hover:scale-110 transition-transform" />
+              </button>
+              
+              <div className="flex items-center space-x-4">
+                <div className="text-sm text-gray-600 bg-white/80 px-3 py-1 rounded-full">
+                  {currentPage + 1} of {totalPages}
+                </div>
+                <div className="flex space-x-2">
+                  {Array.from({ length: totalPages }, (_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => goToPage(index)}
+                      className={`w-3 h-3 rounded-full transition-all ${
+                        currentPage === index 
+                          ? 'bg-blue-600 scale-125' 
+                          : 'bg-gray-300 hover:bg-gray-400'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+              
+              <button
+                onClick={nextPage}
+                className="p-3 bg-white/80 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl transition-all hover:bg-blue-50 group"
+              >
+                <ArrowRight className="h-5 w-5 text-blue-600 group-hover:scale-110 transition-transform" />
+              </button>
+            </motion.div>
+          )}
             </>
           )}
         </div>
       </div>
+
+      {/* Blog Detail Modal */}
+      <AnimatePresence>
+        {showBlogDetail && selectedBlog && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={closeBlogDetail}
+          >
+            <motion.div
+              initial={{ scale: 0.7, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.7, opacity: 0 }}
+              className="bg-white rounded-2xl shadow-2xl max-w-4xl max-h-[90vh] overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="relative">
+                <img 
+                  src={selectedBlog.image} 
+                  alt={selectedBlog.title}
+                  className="w-full h-64 object-cover"
+                />
+                <button
+                  onClick={closeBlogDetail}
+                  className="absolute top-4 right-4 bg-white/90 hover:bg-white text-gray-800 rounded-full p-2 transition-all"
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-8 overflow-y-auto max-h-96">
+                <div className="flex items-center space-x-4 text-sm text-gray-600 mb-4">
+                  <span className="flex items-center space-x-1">
+                    <User className="h-4 w-4" />
+                    <span>{selectedBlog.author}</span>
+                  </span>
+                  <span className="flex items-center space-x-1">
+                    <Calendar className="h-4 w-4" />
+                    <span>{new Date(selectedBlog.date).toLocaleDateString()}</span>
+                  </span>
+                  <span className="flex items-center space-x-1">
+                    <Clock className="h-4 w-4" />
+                    <span>{selectedBlog.readTime}</span>
+                  </span>
+                </div>
+
+                <h1 className="text-3xl font-bold text-gray-900 mb-4">
+                  {selectedBlog.title}
+                </h1>
+
+                <div className="prose max-w-none">
+                  <p className="text-lg text-gray-700 leading-relaxed whitespace-pre-wrap">
+                    {selectedBlog.content}
+                  </p>
+                </div>
+
+                {selectedBlog.tags && selectedBlog.tags.length > 0 && (
+                  <div className="mt-8 flex flex-wrap gap-2">
+                    {selectedBlog.tags.map((tag, index) => (
+                      <span 
+                        key={index}
+                        className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };
