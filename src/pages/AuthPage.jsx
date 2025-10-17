@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaGoogle, FaFacebook, FaPhone, FaEye, FaEyeSlash, FaUser, FaEnvelope, FaLock, FaArrowLeft } from 'react-icons/fa';
-import authService from '../services/AuthService';
+import authService from '../services/SimpleAuthService';
 
-const AuthPage = () => {
+const AuthPage = ({ onAuthSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -106,8 +106,8 @@ const AuthPage = () => {
         return false;
       }
     } else {
-      if (!formData.phoneNumber.match(/^\+?[1-9]\d{1,14}$/)) {
-        setError('Please enter a valid phone number! (Start with +91)');
+      if (!formData.phoneNumber.match(/^[6-9]\d{9}$/)) {
+        setError('Please enter a valid 10-digit mobile number!');
         return false;
       }
     }
@@ -135,15 +135,20 @@ const AuthPage = () => {
         );
       }
 
-      if (result.success) {
+      console.log('Auth result:', result);
+
+      if (result && result.success) {
         setSuccess(result.message);
         setTimeout(() => {
-          window.location.href = authService.isAdmin() ? '/admin' : '/';
+          if (onAuthSuccess) {
+            onAuthSuccess(result.user);
+          }
         }, 1500);
       } else {
-        setError(result.message);
+        setError(result?.message || 'Authentication failed. Please try again.');
       }
     } catch (error) {
+      console.error('Auth error:', error);
       setError('Something went wrong! Please try again.');
     } finally {
       setIsLoading(false);
@@ -517,7 +522,7 @@ const AuthPage = () => {
                 <motion.input
                   type="tel"
                   name="phoneNumber"
-                  placeholder="+91 9876543210"
+                  placeholder="9876543210"
                   value={formData.phoneNumber}
                   onChange={handleInputChange}
                   className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"

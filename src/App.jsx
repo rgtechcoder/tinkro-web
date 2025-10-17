@@ -12,6 +12,7 @@ import AdminDashboard from '@/pages/AdminDashboard';
 // NEW: Added Authentication pages
 import AuthPage from '@/pages/AuthPage';
 import UserProfile from '@/pages/UserProfile';
+import UserDashboard from '@/components/UserDashboard';
 import Cart from '@/components/Cart';
 import Footer from '@/components/Footer';
 import { Toaster } from '@/components/ui/toaster';
@@ -36,6 +37,14 @@ function App() {
   });
   
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [user, setUser] = useState(() => {
+    try {
+      const savedUser = localStorage.getItem('tinkro_current_user');
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch (error) {
+      return null;
+    }
+  });
 
   // NEW: Save cart to localStorage whenever cartItems changes
   useEffect(() => {
@@ -111,7 +120,19 @@ function App() {
       case 'contact':
         return <Contact />;
       case 'auth':
-        return <AuthPage />;
+        return <AuthPage onAuthSuccess={(userData) => {
+          // Set user and redirect to dashboard
+          setUser(userData);
+          setCurrentPage('user-dashboard');
+        }} />;
+      case 'user-dashboard':
+        return user ? <UserDashboard user={user} onLogout={() => {
+          setUser(null);
+          setCurrentPage('home');
+        }} setCurrentPage={setCurrentPage} /> : <AuthPage onAuthSuccess={(userData) => {
+          setUser(userData);
+          setCurrentPage('user-dashboard');
+        }} />;
       case 'profile':
         return <UserProfile />;
       default:

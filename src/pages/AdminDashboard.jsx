@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import OrderManager from '../services/OrderManager';
 import AdminLogin from '../components/AdminLogin';
+import UserManagement from '../components/UserManagement';
 import ProductService from '../services/ProductService';
 import ContactQueryService from '../services/ContactQueryService';
 import BlogService from '../services/BlogService';
@@ -60,7 +61,7 @@ const AdminDashboard = () => {
   const [selectedOrders, setSelectedOrders] = useState([]);
   
   // Tab States
-  const [activeTab, setActiveTab] = useState('orders'); // orders, queries
+  const [activeTab, setActiveTab] = useState('orders'); // orders, queries, users
   
   // Contact Queries States
   const [contactQueries, setContactQueries] = useState([]);
@@ -1523,6 +1524,19 @@ const AdminDashboard = () => {
               </div>
             </button>
 
+            <button
+              onClick={() => setActiveTab('users')}
+              className={`flex-1 px-6 py-4 text-sm font-medium transition-all duration-200 ${
+                activeTab === 'users'
+                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
+                  : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+              }`}
+            >
+              <div className="flex items-center justify-center space-x-2">
+                <Users className="h-5 w-5" />
+                <span>Users</span>
+              </div>
+            </button>
 
           </div>
         </div>
@@ -1870,6 +1884,11 @@ const AdminDashboard = () => {
               </table>
             </div>
           </div>
+        )}
+
+        {/* Users Management Tab Content */}
+        {activeTab === 'users' && (
+          <UserManagement />
         )}
 
 
