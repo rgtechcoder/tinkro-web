@@ -5,6 +5,7 @@ import { ShoppingCart, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 
+// Simple Products page without Firebase - SAFE VERSION
 const Products = ({ addToCart }) => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState(['All']);
@@ -13,8 +14,8 @@ const Products = ({ addToCart }) => {
   const [currentPage, setCurrentPage] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
 
-  // Original products data - exactly as it was before
-  const originalProducts = [
+  // Simple default products - no Firebase calls
+  const defaultProducts = [
     {
       id: 1,
       name: 'Beginner Robotics Kit',
@@ -24,18 +25,20 @@ const Products = ({ addToCart }) => {
       category: 'Arduino Kits',
       stock: 50,
       status: 'published',
-      featured: true
+      featured: true,
+      order: 1
     },
     {
       id: 2,
-      name: 'Advanced Robotics Kit', 
+      name: 'Advanced Robotics Kit',
       price: 4999,
       description: 'For class 9-12 students. Advanced sensors, programmable microcontroller, and complex projects.',
       image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=500&q=80',
       category: 'Advanced Kits',
       stock: 30,
       status: 'published',
-      featured: true
+      featured: true,
+      order: 2
     },
     {
       id: 3,
@@ -45,67 +48,36 @@ const Products = ({ addToCart }) => {
       image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=500&q=80',
       category: 'Bulk Packs',
       stock: 15,
-      status: 'published', 
-      featured: false
-    },
-    {
-      id: 4,
-      name: 'AI Programming Kit',
-      price: 6999,
-      description: 'Learn AI and machine learning with hands-on robotics projects. Includes Python programming guide.',
-      image: 'https://images.unsplash.com/photo-1507146426996-ef05306b995a?w=500&q=80',
-      category: 'AI Kits',
-      stock: 25,
       status: 'published',
-      featured: true
-    },
-    {
-      id: 5,
-      name: 'Sensor Expansion Pack',
-      price: 1499,
-      description: 'Additional sensors and modules to expand your existing robotics projects.',
-      image: 'https://images.unsplash.com/photo-1559163499-413811fb2344?w=500&q=80',
-      category: 'Accessories',
-      stock: 40,
-      status: 'published',
-      featured: false
-    },
-    {
-      id: 6,
-      name: 'Competition Robotics Kit',
-      price: 8999,
-      description: 'Professional-grade kit for robotics competitions. Includes premium components and tools.',
-      image: 'https://images.unsplash.com/photo-1563207153-f403bf289096?w=500&q=80',
-      category: 'Competition Kits',
-      stock: 20,
-      status: 'published',
-      featured: true
+      featured: false,
+      order: 3
     }
   ];
 
-  // Simple loading without any external service calls
+  // Simple loading without Firebase
   useEffect(() => {
-    console.log('🔄 Loading original products data...');
-    setIsLoading(true);
-    
-    // Simulate loading for better UX
-    setTimeout(() => {
+    const loadProducts = () => {
       try {
-        const publishedProducts = originalProducts.filter(p => p.status === 'published');
-        setProducts(publishedProducts);
+        console.log('🔄 Loading safe products without Firebase...');
+        setIsLoading(true);
         
-        const cats = [...new Set(publishedProducts.map(p => p.category))];
-        setCategories(['All', ...cats]);
+        setTimeout(() => {
+          setProducts(defaultProducts);
+          const cats = [...new Set(defaultProducts.map(p => p.category))];
+          setCategories(['All', ...cats]);
+          setIsLoading(false);
+          console.log('✅ Safe products loaded successfully');
+        }, 1000);
         
-        console.log('✅ Original products loaded successfully:', publishedProducts.length);
-        setIsLoading(false);
       } catch (error) {
-        console.error('❌ Error loading products:', error);
+        console.error('❌ Error in safe products loading:', error);
         setProducts([]);
         setCategories(['All']);
         setIsLoading(false);
       }
-    }, 500);
+    };
+
+    loadProducts();
   }, []);
   
   // Filter products by category
@@ -155,7 +127,7 @@ const Products = ({ addToCart }) => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-white">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading Products...</p>

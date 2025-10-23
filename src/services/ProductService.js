@@ -1,8 +1,10 @@
 /**
- * ProductService - Complete Product Management Service
+ * ProductService - Complete Product Management Service  
  * Handles all product operations: Create, Read, Update, Delete
- * Uses localStorage for data persistence with ordering control
+ * Uses Firebase Firestore with localStorage fallback for cross-device sync
  */
+
+import firestoreService from './FirestoreService.js';
 
 class ProductService {
   static STORAGE_KEY = 'tinkro_products';
@@ -97,27 +99,68 @@ class ProductService {
     ];
   }
 
-  // Get all products from localStorage
-  static getAllProducts() {
+  // Sync default products to Firebase (one-time setup)
+  static async syncDefaultsToFirebase(products) {
+    if (!firestoreService.isAvailable()) return;
+    
     try {
+      console.log('🔄 ProductService: Syncing', products.length, 'default products to Firebase...');
+      
+      for (const product of products) {
+        await firestoreService.addProduct(product);
+      }
+      
+      // Update localStorage cache
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(products));
+      console.log('✅ ProductService: Default products synced to Firebase successfully');
+    } catch (error) {
+      console.warn('⚠️ ProductService: Failed to sync defaults to Firebase:', error);
+    }
+  }
+
+  // Get all products with Firebase integration
+  static async getAllProducts() {
+    try {
+      // Try Firebase first if available
+      if (firestoreService.isAvailable()) {
+        const firebaseProducts = await firestoreService.getAllProducts();
+        
+        if (firebaseProducts.length > 0) {
+          console.log('✅ ProductService: Loaded', firebaseProducts.length, 'products from Firebase');
+          // Update localStorage cache
+          localStorage.setItem(this.STORAGE_KEY, JSON.stringify(firebaseProducts));
+          return firebaseProducts;
+        } else {
+          // Initialize Firebase with defaults if empty
+          console.log('🔄 ProductService: Firebase empty, syncing defaults...');
+          const defaults = this.getDefaultProducts();
+          await this.syncDefaultsToFirebase(defaults);
+          return defaults;
+        }
+      }
+      
+      // Fallback to localStorage
       const products = localStorage.getItem(this.STORAGE_KEY);
       if (!products) {
-        console.log('ProductService: No products found, initializing with defaults');
+        console.log('📱 ProductService: Using localStorage with defaults');
         const defaultProducts = this.getDefaultProducts();
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(defaultProducts));
         return defaultProducts;
       }
       return JSON.parse(products);
     } catch (error) {
-      console.error('ProductService: Error loading products:', error);
-      return this.getDefaultProducts();
+      console.error('⚠️ ProductService: Error loading products:', error);
+      // Final fallback to defaults
+      const defaults = this.getDefaultProducts();
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(defaults));
+      return defaults;
     }
   }
 
   // Get only published products (for frontend display)
-  static getPublishedProducts() {
+  static async getPublishedProducts() {
     try {
-      const allProducts = this.getAllProducts();
+      const allProducts = await this.getAllProducts();
       return allProducts
         .filter(product => product.status === 'published')
         .sort((a, b) => (a.order || 999) - (b.order || 999)); // Sort by order
@@ -128,9 +171,9 @@ class ProductService {
   }
 
   // Get featured products (for homepage slider)
-  static getFeaturedProducts() {
+  static async getFeaturedProducts() {
     try {
-      const publishedProducts = this.getPublishedProducts();
+      const publishedProducts = await this.getPublishedProducts();
       return publishedProducts.filter(product => product.featured === true);
     } catch (error) {
       console.error('ProductService: Error loading featured products:', error);
@@ -138,10 +181,10 @@ class ProductService {
     }
   }
 
-  // Add new product
-  static addProduct(productData) {
+  // Add new product with Firebase sync
+  static async addProduct(productData) {
     try {
-      const products = this.getAllProducts();
+      const products = await this.getAllProducts();
       console.log('ProductService: Adding product:', productData.name);
       
       // Generate new ID
@@ -165,6 +208,15 @@ class ProductService {
         updatedAt: new Date().toISOString()
       };
 
+      // Add to Firebase first for cross-device sync
+      try {
+        const firebaseProduct = await firestoreService.addProduct(newProduct);
+        console.log('ProductService: Product synced to Firebase:', firebaseProduct.name);
+      } catch (firebaseError) {
+        console.warn('ProductService: Firebase sync failed, using localStorage only:', firebaseError);
+      }
+
+      // Update localStorage cache
       products.push(newProduct);
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(products));
       console.log('ProductService: Product added successfully:', newProduct.name);
@@ -228,9 +280,9 @@ class ProductService {
   }
 
   // Delete product
-  static deleteProduct(id) {
+  static async deleteProduct(id) {
     try {
-      const products = this.getAllProducts();
+      const products = await this.getAllProducts();
       const filteredProducts = products.filter(product => 
         product.id !== parseInt(id) && product.id !== id
       );
@@ -249,9 +301,9 @@ class ProductService {
   }
 
   // Update product order (for custom arrangement)
-  static updateProductOrder(productId, newOrder) {
+  static async updateProductOrder(productId, newOrder) {
     try {
-      const products = this.getAllProducts();
+      const products = await this.getAllProducts();
       const productIndex = products.findIndex(p => p.id === parseInt(productId));
       
       if (productIndex === -1) {
@@ -293,10 +345,15 @@ class ProductService {
   }
 
   // Get product categories
-  static getCategories() {
-    const products = this.getAllProducts();
-    const categories = [...new Set(products.map(product => product.category))];
-    return categories.length > 0 ? categories : ['Arduino Kits', 'Advanced Kits', 'AI Kits', 'Accessories'];
+  static async getCategories() {
+    try {
+      const products = await this.getAllProducts();
+      const categories = [...new Set(products.map(product => product.category))];
+      return categories.length > 0 ? categories : ['Arduino Kits', 'Advanced Kits', 'AI Kits', 'Accessories'];
+    } catch (error) {
+      console.error('ProductService: Error loading categories:', error);
+      return ['Arduino Kits', 'Advanced Kits', 'AI Kits', 'Accessories'];
+    }
   }
 
   // Validate product data

@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Rocket, Users, Award, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import DiwaliPromoSlider from '../components/DiwaliPromoSlider';
 
 const Home = ({ setCurrentPage }) => {
   const features = [
@@ -30,6 +31,9 @@ const Home = ({ setCurrentPage }) => {
         <meta name="description" content="Welcome to Tinkro! Discover innovative robotics kits for school students. Make learning fun with hands-on STEM education." />
       </Helmet>
       <div>
+        {/* Advanced Diwali Promo Slider */}
+        <DiwaliPromoSlider setCurrentPage={setCurrentPage} />
+
         <section className="relative bg-tinkro-light-blue overflow-hidden">
           <div className="container mx-auto px-4 py-20 md:py-28">
             <div className="grid md:grid-cols-2 gap-12 items-center">
