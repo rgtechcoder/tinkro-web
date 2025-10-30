@@ -1,62 +1,95 @@
-﻿import { 
-  collection, 
-  doc, 
-  getDocs, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  query, 
+﻿
+
+import {
+  collection,
+  doc,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  query,
   orderBy,
-  serverTimestamp 
+  serverTimestamp
 } from 'firebase/firestore';
-import { db, isFirebaseReady } from '../config/firebase.js';
+import { db } from '../config/firebase.js';
 
 class FirestoreService {
   constructor() {
-    console.log('🔥 FirestoreService initialized:', isFirebaseReady ? 'Connected to Tinkro-Web-Database' : 'Using localStorage fallback');
+    console.log('FirestoreService initialized:', db ? 'Connected to Firestore' : 'Using local fallback');
   }
 
   isAvailable() {
-    return isFirebaseReady && db !== null;
+    return !!db;
   }
 
   // Products
   async getAllProducts() {
-    try {
-      const snapshot = await getDocs(query(collection(db, 'products'), orderBy('order', 'asc')));
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (error) {
-      console.error('Error getting products:', error);
+    if (db) {
+      try {
+        const snapshot = await getDocs(query(collection(db, 'products'), orderBy('order', 'asc')));
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      } catch (error) {
+        console.error('Error getting products:', error);
+        return [];
+      }
+    } else {
+      // Fallback: static data
       return [];
     }
   }
 
   async addProduct(product) {
-    try {
-      const docRef = await addDoc(collection(db, 'products'), {
-        ...product,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-      return { ...product, id: docRef.id };
-    } catch (error) {
-      console.error('Error adding product:', error);
-      throw error;
+    if (db) {
+      try {
+        const docRef = await addDoc(collection(db, 'products'), {
+          ...product,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+        return { ...product, id: docRef.id };
+      } catch (error) {
+        console.error('Error adding product:', error);
+        throw error;
+      }
+    } else {
+      // Fallback: just return the product
+      return { ...product, id: Date.now().toString() };
     }
   }
 
   async updateProduct(id, updateData) {
-    try {
-      await updateDoc(doc(db, 'products', id), {
-        ...updateData,
-        updatedAt: serverTimestamp()
-      });
+    if (db) {
+      try {
+        await updateDoc(doc(db, 'products', id), {
+          ...updateData,
+          updatedAt: serverTimestamp()
+        });
+        return { id, ...updateData };
+      } catch (error) {
+        console.error('Error updating product:', error);
+        throw error;
+      }
+    } else {
+      // Fallback: just return the update
       return { id, ...updateData };
-    } catch (error) {
-      console.error('Error updating product:', error);
-      throw error;
     }
   }
+
+  async deleteProduct(id) {
+    if (db) {
+      try {
+        await deleteDoc(doc(db, 'products', id));
+        return true;
+      } catch (error) {
+        console.error('Error deleting product:', error);
+        return false;
+      }
+    } else {
+      // Fallback: just return true
+      return true;
+    }
+  }
+  // ...existing code...
 
   async deleteProduct(id) {
     try {

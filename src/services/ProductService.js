@@ -229,54 +229,62 @@ class ProductService {
 
   // Update existing product
   static updateProduct(id, productData) {
-    try {
-      const products = this.getAllProducts();
-      console.log('ProductService: Updating product with ID:', id);
-      
-      const productIndex = products.findIndex(product => 
-        product.id === parseInt(id) || product.id === id
-      );
-      
-      if (productIndex === -1) {
-        throw new Error(`Product not found with ID: ${id}`);
-      }
+    return (async () => {
+      try {
+        let products = await this.getAllProducts();
+        console.log('ProductService: Updating product with ID:', id);
 
-      console.log('ProductService: Found product at index:', productIndex);
+        const productIndex = products.findIndex(product => 
+          product.id === parseInt(id) || product.id === id
+        );
 
-      // Handle base64 images (from file upload)
-      let processedImageUrl = productData.image;
-      if (productData.image && productData.image.trim()) {
-        processedImageUrl = productData.image.trim();
-        
-        if (processedImageUrl.startsWith('data:image/')) {
-          console.log('ProductService: Base64 image detected for product');
-        } else {
-          // Add cache busting for URL images
-          if (processedImageUrl !== products[productIndex].image) {
-            const separator = processedImageUrl.includes('?') ? '&' : '?';
-            processedImageUrl = `${processedImageUrl}${separator}v=${Date.now()}`;
+        if (productIndex === -1) {
+          throw new Error(`Product not found with ID: ${id}`);
+        }
+
+        // Handle base64 images (from file upload)
+        let processedImageUrl = productData.image;
+        if (productData.image && productData.image.trim()) {
+          processedImageUrl = productData.image.trim();
+          if (processedImageUrl.startsWith('data:image/')) {
+            console.log('ProductService: Base64 image detected for product');
+          } else {
+            if (processedImageUrl !== products[productIndex].image) {
+              const separator = processedImageUrl.includes('?') ? '&' : '?';
+              processedImageUrl = `${processedImageUrl}${separator}v=${Date.now()}`;
+            }
           }
         }
+
+        const updatedProduct = {
+          ...products[productIndex],
+          ...productData,
+          image: processedImageUrl,
+          price: parseFloat(productData.price) || products[productIndex].price,
+          stock: parseInt(productData.stock) || products[productIndex].stock,
+          id: parseInt(id),
+          updatedAt: new Date().toISOString()
+        };
+
+        // Try to update in Firebase first
+        try {
+          if (firestoreService.isAvailable()) {
+            await firestoreService.updateProduct(updatedProduct.id, updatedProduct);
+            console.log('ProductService: Product updated in Firebase:', updatedProduct.name);
+          }
+        } catch (firebaseError) {
+          console.warn('ProductService: Firebase update failed, using localStorage only:', firebaseError);
+        }
+
+        products[productIndex] = updatedProduct;
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(products));
+        console.log('ProductService: Product updated successfully:', updatedProduct.name);
+        return updatedProduct;
+      } catch (error) {
+        console.error('ProductService: Error updating product:', error);
+        throw error;
       }
-
-      const updatedProduct = {
-        ...products[productIndex],
-        ...productData,
-        image: processedImageUrl,
-        price: parseFloat(productData.price) || products[productIndex].price,
-        stock: parseInt(productData.stock) || products[productIndex].stock,
-        id: parseInt(id), // Ensure ID doesn't change
-        updatedAt: new Date().toISOString()
-      };
-
-      products[productIndex] = updatedProduct;
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(products));
-      console.log('ProductService: Product updated successfully:', updatedProduct.name);
-      return updatedProduct;
-    } catch (error) {
-      console.error('ProductService: Error updating product:', error);
-      throw error;
-    }
+    })();
   }
 
   // Delete product
@@ -286,9 +294,19 @@ class ProductService {
       const filteredProducts = products.filter(product => 
         product.id !== parseInt(id) && product.id !== id
       );
-      
+
       if (products.length === filteredProducts.length) {
         throw new Error('Product not found');
+      }
+
+      // Try to delete from Firebase first
+      try {
+        if (firestoreService.isAvailable()) {
+          await firestoreService.deleteProduct(id);
+          console.log('ProductService: Product deleted from Firebase, ID:', id);
+        }
+      } catch (firebaseError) {
+        console.warn('ProductService: Firebase delete failed, using localStorage only:', firebaseError);
       }
 
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(filteredProducts));
@@ -323,26 +341,32 @@ class ProductService {
   }
 
   // Toggle featured status
-  static toggleFeatured(productId) {
-    try {
-      const products = this.getAllProducts();
-      const productIndex = products.findIndex(p => p.id === parseInt(productId));
-      
-      if (productIndex === -1) {
-        throw new Error('Product not found');
+    static async toggleFeatured(productId) {
+      try {
+        let products = await this.getAllProducts();
+        const productIndex = products.findIndex(p => p.id === parseInt(productId));
+        if (productIndex === -1) {
+          throw new Error('Product not found');
+        }
+        products[productIndex].featured = !products[productIndex].featured;
+        products[productIndex].updatedAt = new Date().toISOString();
+        // Try to update in Firebase first
+        try {
+          if (firestoreService.isAvailable()) {
+            await firestoreService.updateProduct(products[productIndex].id, products[productIndex]);
+            console.log(`ProductService: Featured status toggled in Firebase - ID: ${productId}, Featured: ${products[productIndex].featured}`);
+          }
+        } catch (firebaseError) {
+          console.warn('ProductService: Firebase toggleFeatured failed, using localStorage only:', firebaseError);
+        }
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(products));
+        console.log(`ProductService: Featured status toggled - ID: ${productId}, Featured: ${products[productIndex].featured}`);
+        return products[productIndex];
+      } catch (error) {
+        console.error('ProductService: Error toggling featured status:', error);
+        throw error;
       }
-
-      products[productIndex].featured = !products[productIndex].featured;
-      products[productIndex].updatedAt = new Date().toISOString();
-      
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(products));
-      console.log(`ProductService: Featured status toggled - ID: ${productId}, Featured: ${products[productIndex].featured}`);
-      return products[productIndex];
-    } catch (error) {
-      console.error('ProductService: Error toggling featured status:', error);
-      throw error;
     }
-  }
 
   // Get product categories
   static async getCategories() {
@@ -393,15 +417,19 @@ class ProductService {
   }
 
   // Get product by ID
-  static getProductById(id) {
+  static async getProductById(id) {
     try {
-      const products = this.getAllProducts();
-      const product = products.find(p => p.id === parseInt(id) || p.id === id);
-      
+      let product = null;
+      if (firestoreService.isAvailable()) {
+        const products = await firestoreService.getAllProducts();
+        product = products.find(p => p.id === id || p.id === parseInt(id));
+      } else {
+        const products = await this.getAllProducts();
+        product = products.find(p => p.id === id || p.id === parseInt(id));
+      }
       if (!product) {
         throw new Error(`Product not found with ID: ${id}`);
       }
-      
       return product;
     } catch (error) {
       console.error('ProductService: Error getting product by ID:', error);

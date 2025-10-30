@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+// import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { motion } from 'framer-motion';
 import { Lock, User, Eye, EyeOff } from 'lucide-react';
 
@@ -20,28 +21,23 @@ const AdminLogin = ({ onLoginSuccess }) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate authentication delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    if (credentials.username === ADMIN_CREDENTIALS.username && 
-        credentials.password === ADMIN_CREDENTIALS.password) {
-      
-      // Save admin session
+    // Local credential check
+    if (
+      credentials.username === ADMIN_CREDENTIALS.username &&
+      credentials.password === ADMIN_CREDENTIALS.password
+    ) {
       localStorage.setItem('tinkro_admin_session', JSON.stringify({
         loggedIn: true,
         timestamp: Date.now(),
-        user: 'tinkro_admin'
+        user: credentials.username
       }));
-
       console.log("Admin login successful! 🎉");
       alert("Welcome Admin! Login successful 🎉");
-
       onLoginSuccess();
     } else {
       console.log("Invalid credentials ❌");
       alert("Invalid Credentials ❌ Please check your username and password");
     }
-
     setIsLoading(false);
   };
 

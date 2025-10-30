@@ -32,7 +32,7 @@ const Home = ({ setCurrentPage }) => {
       </Helmet>
       <div>
         {/* Advanced Diwali Promo Slider */}
-        <DiwaliPromoSlider setCurrentPage={setCurrentPage} />
+        {/* <DiwaliPromoSlider setCurrentPage={setCurrentPage} /> */}
 
         <section className="relative bg-tinkro-light-blue overflow-hidden">
           <div className="container mx-auto px-4 py-20 md:py-28">

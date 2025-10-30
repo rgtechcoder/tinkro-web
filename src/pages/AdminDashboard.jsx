@@ -677,7 +677,7 @@ const AdminDashboard = () => {
   // Load products from ProductService
   const loadProducts = async () => {
     try {
-      const allProducts = ProductService.getAllProducts();
+      const allProducts = await ProductService.getAllProducts();
       setProducts(allProducts);
       console.log('✅ Products loaded from ProductService:', allProducts.length);
     } catch (error) {
@@ -692,38 +692,34 @@ const AdminDashboard = () => {
 
   // Enhanced Add Product with ProductService
   const handleAddProduct = () => {
-    try {
-      console.log("🎯 Adding new product:", newProduct);
-      
-      const errors = ProductService.validateProductData(newProduct);
-      if (errors.length > 0) {
-        alert('⚠️ Please fix the following errors:\n' + errors.join('\n'));
-        return;
+    (async () => {
+      try {
+        console.log("🎯 Adding new product:", newProduct);
+        const errors = ProductService.validateProductData(newProduct);
+        if (errors.length > 0) {
+          alert('⚠️ Please fix the following errors:\n' + errors.join('\n'));
+          return;
+        }
+        const addedProduct = await ProductService.addProduct(newProduct);
+        console.log('✅ Product added successfully:', addedProduct.name);
+        setNewProduct({
+          name: '',
+          price: '',
+          category: 'Arduino Kits',
+          image: '',
+          description: '',
+          stock: '',
+          featured: false,
+          status: 'published'
+        });
+        setShowAddProduct(false);
+        await loadProducts(); // Reload products
+        alert(`✅ Product "${addedProduct.name}" added successfully!`);
+      } catch (error) {
+        console.error('❌ Error adding product:', error);
+        alert('❌ Error adding product: ' + error.message);
       }
-      
-      const addedProduct = ProductService.addProduct(newProduct);
-      console.log('✅ Product added successfully:', addedProduct.name);
-      
-      // Reset form
-      setNewProduct({
-        name: '',
-        price: '',
-        category: 'Arduino Kits',
-        image: '',
-        description: '',
-        stock: '',
-        featured: false,
-        status: 'published'
-      });
-      
-      setShowAddProduct(false);
-      loadProducts(); // Reload products
-      
-      alert(`✅ Product "${addedProduct.name}" added successfully!`);
-    } catch (error) {
-      console.error('❌ Error adding product:', error);
-      alert('❌ Error adding product: ' + error.message);
-    }
+    })();
   };
 
   // Edit Product Functions
@@ -2223,7 +2219,10 @@ const AdminDashboard = () => {
                   Cancel
                 </button>
                 <button
-                  onClick={handleAddProduct}
+                  onClick={() => {
+                    console.log('Add to Website button clicked', newProduct);
+                    handleAddProduct();
+                  }}
                   disabled={!newProduct.name || !newProduct.price}
                   className="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                 >

@@ -1,36 +1,37 @@
 // Safe Firebase Configuration with Real Credentials
-import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
 
-// Real Firebase configuration
+
+// Fresh Firebase config with error handling
+import { initializeApp, getApps } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+
 const firebaseConfig = {
-  apiKey: "AIzaSyBfSJeKJG4n_KSWzz656xpL7HXLR9WnBvw",
-  authDomain: "tinkro-web-database.firebaseapp.com",
-  projectId: "tinkro-web-database",
-  storageBucket: "tinkro-web-database.firebasestorage.app",
-  messagingSenderId: "959260509327",
-  appId: "1:959260509327:web:7579531e4f1fefa6905cfa",
-  measurementId: "G-C2D1WJ5LMH"
+	apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+	authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+	projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+	storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+	messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+	appId: import.meta.env.VITE_FIREBASE_APP_ID,
+	measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || ''
 };
+console.log('FIREBASE CONFIG:', firebaseConfig);
 
-// Safe initialization with error handling
 let app = null;
 let db = null;
 let auth = null;
-let isFirebaseReady = false;
 
+console.log('FIREBASE CONFIG:', firebaseConfig);
 try {
-  // Initialize Firebase
-  app = initializeApp(firebaseConfig);
-  db = getFirestore(app);
-  auth = getAuth(app);
-  isFirebaseReady = true;
-  console.log('🔥 Firebase connected successfully to Tinkro-Web-Database');
+	app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+	db = getFirestore(app);
+	auth = getAuth(app);
+	console.log('✅ Firebase initialized');
 } catch (error) {
-  console.error('⚠️ Firebase initialization failed, using localStorage fallback:', error);
-  isFirebaseReady = false;
+	console.error('❌ Firebase init error:', error);
+	db = null;
+	auth = null;
 }
 
-export { db, auth, isFirebaseReady };
+export { db, auth };
 export default app;

@@ -16,6 +16,7 @@ import UserDashboard from '@/components/UserDashboard';
 import Cart from '@/components/Cart';
 import Footer from '@/components/Footer';
 import { Toaster } from '@/components/ui/toaster';
+import ChatBot from './chatbot/ChatBot';
 
 function App() {
   // Check URL hash for page navigation including auth routes
@@ -246,6 +247,7 @@ function App() {
           removeItem={removeFromCart}
           totalPrice={getTotalPrice()}
         />
+        <ChatBot />
         <Toaster />
       </div>
     </>
