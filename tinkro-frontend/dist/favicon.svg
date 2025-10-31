@@ -1,0 +1,28 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle with Gradient -->
+  <circle cx="32" cy="32" r="32" fill="url(#gradient)"/>
+  
+  <!-- Rocket Body -->
+  <path d="M32 8L28 24H36L32 8Z" fill="white"/>
+  <rect x="28" y="24" width="8" height="16" fill="#f0f0f0"/>
+  
+  <!-- Rocket Fins -->
+  <path d="M24 40L20 48L28 44L24 40Z" fill="#ddd"/>
+  <path d="M40 40L44 48L36 44L40 40Z" fill="#ddd"/>
+  
+  <!-- Rocket Window -->
+  <circle cx="32" cy="32" r="4" fill="#4f79a4"/>
+  <circle cx="32" cy="32" r="2" fill="white"/>
+  
+  <!-- Flame -->
+  <path d="M28 44L32 56L36 44H28Z" fill="#ff7a00"/>
+  <path d="M30 44L32 52L34 44H30Z" fill="#ff9900"/>
+  
+  <!-- Gradient Definition -->
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ff7a00;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4f79a4;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+</svg>
