@@ -39,9 +39,13 @@ import {
 import OrderManager from '../services/OrderManager';
 import AdminLogin from '../components/AdminLogin';
 import UserManagement from '../components/UserManagement';
+import UserManagementTab from '../components/UserManagementTab';
 import ProductService from '../services/ProductService';
 import ContactQueryService from '../services/ContactQueryService';
+import firebaseContactService from '../services/FirebaseContactService';
 import BlogService from '../services/BlogService';
+import firebaseBlogService from '../services/FirebaseBlogService';
+import firebaseNotificationService from '../services/FirebaseNotificationService';
 
 const AdminDashboard = () => {
   console.log("AdminDashboard - Advanced Professional Version Loading...");
@@ -393,8 +397,8 @@ const AdminDashboard = () => {
   // Load Contact Queries
   const loadContactQueries = async () => {
     try {
-      console.log("Loading contact queries...");
-      const queries = ContactQueryService.getAllQueries();
+      console.log("Loading contact queries from Firebase...");
+      const queries = await firebaseContactService.getAllQueries();
       console.log(`Contact queries loaded: ${queries.length} queries found`);
       setContactQueries(queries);
     } catch (error) {
@@ -404,30 +408,45 @@ const AdminDashboard = () => {
   };
 
   // Update query status
-  const updateQueryStatus = (queryId, status, notes = '') => {
-    const result = ContactQueryService.updateQueryStatus(queryId, status, notes);
-    if (result.success) {
-      loadContactQueries(); // Reload queries
+  const updateQueryStatus = async (queryId, status, notes = '') => {
+    try {
+      const result = await firebaseContactService.updateQueryStatus(queryId, status, notes);
+      if (result.success) {
+        await loadContactQueries(); // Reload queries
+      }
+      return result;
+    } catch (error) {
+      console.error('Error updating query status:', error);
+      return { success: false, error: error.message };
     }
-    return result;
   };
 
   // Update query priority
-  const updateQueryPriority = (queryId, priority) => {
-    const result = ContactQueryService.updateQueryPriority(queryId, priority);
-    if (result.success) {
-      loadContactQueries(); // Reload queries
+  const updateQueryPriority = async (queryId, priority) => {
+    try {
+      const result = await firebaseContactService.updateQueryPriority(queryId, priority);
+      if (result.success) {
+        await loadContactQueries(); // Reload queries
+      }
+      return result;
+    } catch (error) {
+      console.error('Error updating query priority:', error);
+      return { success: false, error: error.message };
     }
-    return result;
   };
 
   // Delete query
-  const deleteQuery = (queryId) => {
-    const result = ContactQueryService.deleteQuery(queryId);
-    if (result.success) {
-      loadContactQueries(); // Reload queries
+  const deleteQuery = async (queryId) => {
+    try {
+      const result = await firebaseContactService.deleteQuery(queryId);
+      if (result.success) {
+        await loadContactQueries(); // Reload queries
+      }
+      return result;
+    } catch (error) {
+      console.error('Error deleting query:', error);
+      return { success: false, error: error.message };
     }
-    return result;
   };
 
   // Blog Management Functions
@@ -646,10 +665,30 @@ const AdminDashboard = () => {
 
   // Get Filtered Contact Queries
   const getFilteredQueries = () => {
-    return ContactQueryService.searchQueries(querySearchTerm, {
-      status: queryStatusFilter,
-      priority: queryPriorityFilter
-    });
+    let filtered = [...contactQueries];
+    
+    // Apply search filter
+    if (querySearchTerm) {
+      const searchLower = querySearchTerm.toLowerCase();
+      filtered = filtered.filter(q => 
+        q.name?.toLowerCase().includes(searchLower) ||
+        q.email?.toLowerCase().includes(searchLower) ||
+        q.phone?.includes(querySearchTerm) ||
+        q.message?.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    // Apply status filter
+    if (queryStatusFilter && queryStatusFilter !== 'all') {
+      filtered = filtered.filter(q => q.status === queryStatusFilter);
+    }
+    
+    // Apply priority filter
+    if (queryPriorityFilter && queryPriorityFilter !== 'all') {
+      filtered = filtered.filter(q => q.priority === queryPriorityFilter);
+    }
+    
+    return filtered;
   };
 
   // Get Filtered Blogs
@@ -731,33 +770,45 @@ const AdminDashboard = () => {
     }
 
     try {
-      // Here you would integrate with your notification service
-      // For now, we'll add it to local notifications
-      const newNotification = {
-        id: Date.now(),
-        type: notificationForm.priority === 'urgent' ? 'alert' : 'system',
+      // Send notification via Firebase
+      const result = await firebaseNotificationService.sendNotification({
         title: notificationForm.title,
         message: notificationForm.message,
-        time: 'Just now',
-        unread: true
-      };
-
-      setNotifications(prev => [newNotification, ...prev]);
-      
-      // Reset form
-      setNotificationForm({
-        type: 'all',
-        title: '',
-        message: '',
-        priority: 'normal'
+        type: notificationForm.priority === 'urgent' ? 'alert' : notificationForm.priority === 'high' ? 'warning' : 'info',
+        priority: notificationForm.priority
       });
-      
-      setShowNotificationModal(false);
-      
-      // Show success message
-      alert('Notification sent successfully!');
+
+      if (result.success) {
+        // Add to local notifications for admin view
+        const newNotification = {
+          id: result.notification.id,
+          type: result.notification.type,
+          title: result.notification.title,
+          message: result.notification.message,
+          time: 'Just now',
+          unread: true
+        };
+
+        setNotifications(prev => [newNotification, ...prev]);
+        
+        // Reset form
+        setNotificationForm({
+          type: 'all',
+          title: '',
+          message: '',
+          priority: 'normal'
+        });
+        
+        setShowNotificationModal(false);
+        
+        // Show success message
+        alert('Notification sent successfully to all users!');
+      } else {
+        throw new Error(result.error || 'Failed to send notification');
+      }
     } catch (error) {
-      alert('Failed to send notification');
+      console.error('Error sending notification:', error);
+      alert('Failed to send notification: ' + error.message);
     }
   };
 
@@ -1768,7 +1819,20 @@ const AdminDashboard = () => {
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => {
-                    const csvContent = ContactQueryService.exportToCSV();
+                    // Generate CSV from current contactQueries state
+                    const headers = ['ID', 'Name', 'Email', 'Phone', 'Message', 'Status', 'Priority', 'Date'];
+                    const rows = contactQueries.map(q => [
+                      q.id,
+                      q.name,
+                      q.email,
+                      q.phone || '',
+                      q.message,
+                      q.status,
+                      q.priority,
+                      q.createdAt
+                    ]);
+                    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+                    
                     const blob = new Blob([csvContent], { type: 'text/csv' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
@@ -1928,17 +1992,17 @@ const AdminDashboard = () => {
                       {/* Category */}
                       <td className="px-6 py-4">
                         <span className="px-3 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded-full">
-                          {query.category.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          {query.category ? query.category.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'General'}
                         </span>
                       </td>
                       
                       {/* Date */}
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-900">
-                          {new Date(query.submittedAt).toLocaleDateString()}
+                          {new Date(query.createdAt || query.submittedAt).toLocaleDateString()}
                         </div>
                         <div className="text-xs text-gray-500">
-                          {new Date(query.submittedAt).toLocaleTimeString()}
+                          {new Date(query.createdAt || query.submittedAt).toLocaleTimeString()}
                         </div>
                         {query.respondedAt && (
                           <div className="text-xs text-green-600 mt-1">
@@ -1997,7 +2061,7 @@ const AdminDashboard = () => {
 
         {/* Users Management Tab Content */}
         {activeTab === 'users' && (
-          <UserManagement />
+          <UserManagementTab />
         )}
 
 

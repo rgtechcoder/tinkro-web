@@ -1,4 +1,128 @@
 import React, { useState, useEffect } from 'react';
+import { auth, db } from '../config/firebase';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { updateProfile, updatePassword, updateEmail } from 'firebase/auth';
+import { toast } from 'sonner';
+import { User, Mail, Lock, Camera, Save, Edit3 } from 'lucide-react';
+
+const UserProfile = () => {
+  const [user, setUser] = useState(null);
+  const [userProfile, setUserProfile] = useState({
+    displayName: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    state: '',
+    pincode: '',
+    photoURL: ''
+  });
+  const [isEditing, setIsEditing] = useState(false);
+  const [passwords, setPasswords] = useState({
+    current: '',
+    new: '',
+    confirm: ''
+  });
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+      setUser(currentUser);
+      loadUserProfile(currentUser.uid);
+    }
+  }, []);
+
+  const loadUserProfile = async (userId) => {
+    try {
+      const userDoc = await getDoc(doc(db, 'users', userId));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        setUserProfile({
+          displayName: userData.displayName || currentUser?.displayName || '',
+          email: userData.email || currentUser?.email || '',
+          phone: userData.phone || '',
+          address: userData.address || '',
+          city: userData.city || '',
+          state: userData.state || '',
+          pincode: userData.pincode || '',
+          photoURL: userData.photoURL || currentUser?.photoURL || ''
+        });
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error);
+      toast.error('Failed to load profile data');
+    }
+  };
+
+  const handleProfileUpdate = async (e) => {
+    e.preventDefault();
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      // Update Firebase Auth profile
+      await updateProfile(user, {
+        displayName: userProfile.displayName,
+        photoURL: userProfile.photoURL
+      });
+
+      // Update Firestore document
+      await updateDoc(doc(db, 'users', user.uid), userProfile);
+      
+      toast.success('Profile updated successfully!');
+      setIsEditing(false);
+      
+      // Trigger a re-render by updating local state
+      setUser({...user, displayName: userProfile.displayName});
+      
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Failed to update profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordUpdate = async (e) => {
+    e.preventDefault();
+    if (!user) return;
+    
+    if (passwords.new !== passwords.confirm) {
+      toast.error('Passwords do not match');
+      return;
+    }
+    
+    if (passwords.new.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await updatePassword(user, passwords.new);
+      toast.success('Password updated successfully!');
+      setPasswords({ current: '', new: '', confirm: '' });
+    } catch (error) {
+      console.error('Error updating password:', error);
+      toast.error('Failed to update password');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaEdit, FaSave, FaTimes,

@@ -70,7 +70,7 @@ const About = () => {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
               >
-                <img alt="Tinkro team working on robotics education" className="rounded-2xl shadow-xl" src="https://images.unsplash.com/photo-1694532415679-13a10fb3d519" />
+                <img alt="Tinkro team working on robotics education" className="responsive-img" src="https://images.unsplash.com/photo-1694532415679-13a10fb3d519" />
               </motion.div>
             </div>
 

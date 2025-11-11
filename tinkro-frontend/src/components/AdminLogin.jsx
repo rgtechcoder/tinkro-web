@@ -123,24 +123,6 @@ const AdminLogin = ({ onLoginSuccess }) => {
           </button>
         </form>
 
-        {/* Current Credentials Info */}
-        <div className="mt-8 p-4 bg-gray-50 rounded-lg border-l-4 border-blue-500">
-          <h4 className="font-semibold text-gray-800 mb-2">Current Credentials:</h4>
-          <div className="text-sm text-gray-600 space-y-1">
-            <p><strong>Username:</strong> <code className="bg-white px-2 py-1 rounded">{ADMIN_CREDENTIALS.username}</code></p>
-            <p><strong>Password:</strong> <code className="bg-white px-2 py-1 rounded">{"*".repeat(ADMIN_CREDENTIALS.password.length)}</code></p>
-          </div>
-          <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
-            <p className="text-xs text-yellow-800 font-medium">🔧 To Change Credentials:</p>
-            <ol className="text-xs text-yellow-700 mt-1 space-y-1">
-              <li>1. Open <code className="bg-white px-1 rounded">.env</code> file in project root</li>
-              <li>2. Update <code className="bg-white px-1 rounded">VITE_ADMIN_USERNAME</code></li>
-              <li>3. Update <code className="bg-white px-1 rounded">VITE_ADMIN_PASSWORD</code></li>
-              <li>4. Save file & restart server</li>
-            </ol>
-          </div>
-        </div>
-
         {/* Security Features */}
         <div className="mt-6 text-center">
           <p className="text-xs text-gray-500">

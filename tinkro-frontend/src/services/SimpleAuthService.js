@@ -27,6 +27,7 @@ class SimpleAuthService {
         id: Date.now(),
         email: email,
         name: displayName,
+        displayName: displayName, // Add for consistency
         password: btoa(password), // Simple encoding
         createdAt: new Date().toISOString()
       };
@@ -164,7 +165,16 @@ class SimpleAuthService {
 
   // Get current user
   getCurrentUser() {
-    return this.currentUser;
+    // Always get fresh data from localStorage
+    try {
+      const savedUser = localStorage.getItem('tinkro_current_user');
+      this.currentUser = savedUser ? JSON.parse(savedUser) : null;
+      return this.currentUser;
+    } catch (error) {
+      console.error('Error reading current user from localStorage:', error);
+      this.currentUser = null;
+      return null;
+    }
   }
 
   // Logout function

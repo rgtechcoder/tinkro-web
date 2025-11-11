@@ -1,0 +1,200 @@
+[
+  {
+    "id": 1,
+    "keywords": ["laptop", "computer", "pc", "coding", "arduino laptop"],
+    "q": {
+      "en": "Does the kit need a laptop or computer?",
+      "hi": "Kya kit ko laptop ya computer chahiye?"
+    },
+    "a": {
+      "en": "Some advanced kits (like Coding or Arduino) may need a laptop, but our basic and electronics kits work without one.",
+      "hi": "Kuch advanced kits (jaise Coding ya Arduino) ko laptop chahiye hota hai, par basic aur electronics kits bina laptop ke chalti hain."
+    }
+  },
+  {
+    "id": 2,
+    "keywords": ["time", "project time", "kit time", "build", "duration"],
+    "q": {
+      "en": "How much time does it take to build a project?",
+      "hi": "Ek project banane me kitna time lagta hai?"
+    },
+    "a": {
+      "en": "Each project takes around 30 minutes to 2 hours depending on the child’s age and the kit type.",
+      "hi": "Har project lagbhag 30 minutes se 2 hours leta hai, bacche ki age aur kit type par depend karta hai."
+    }
+  },
+  {
+    "id": 3,
+    "keywords": ["reuse", "reusable", "multiple projects"],
+    "q": {
+      "en": "Are the kits reusable?",
+      "hi": "Kya kits reusable hain?"
+    },
+    "a": {
+      "en": "Yes. All components are reusable so kids can build multiple projects from one kit.",
+      "hi": "Haan, saare components reusable hain, ek kit se kai projects ban sakte hain."
+    }
+  },
+  {
+    "id": 4,
+    "keywords": ["tools", "extra materials", "need anything"],
+    "q": {
+      "en": "Do I need any extra tools or materials?",
+      "hi": "Kya extra tools ya materials chahiye honge?"
+    },
+    "a": {
+      "en": "No extra tools required. Everything needed is included in the box.",
+      "hi": "Nahi, koi extra tools nahi chahiye. Saari cheezein box me hi milti hain."
+    }
+  },
+  {
+    "id": 5,
+    "keywords": ["safe", "children", "kids", "child safety"],
+    "q": {
+      "en": "Is it safe for children?",
+      "hi": "Kya ye bacchon ke liye safe hai?"
+    },
+    "a": {
+      "en": "Yes, our kits are made from child-safe and quality tested materials.",
+      "hi": "Haan, ye kits child-safe aur quality tested materials se bani hoti hain."
+    }
+  },
+  {
+    "id": 6,
+    "keywords": ["parent help", "parents", "guide", "support child"],
+    "q": {
+      "en": "Can parents help while building?",
+      "hi": "Kya parents madad kar sakte hain?"
+    },
+    "a": {
+      "en": "Yes, these kits are great for parent-child learning and bonding.",
+      "hi": "Haan, ye kits parent-child learning aur bonding ke liye bahut achhi hain."
+    }
+  },
+  {
+    "id": 7,
+    "keywords": ["prior knowledge", "robotics knowledge", "beginner"],
+    "q": {
+      "en": "Does my child need prior robotics knowledge?",
+      "hi": "Kya bacche ko robotics ki knowledge pehle se chahiye?"
+    },
+    "a": {
+      "en": "No. Our kits start from basics with simple step-by-step instructions.",
+      "hi": "Nahi. Ye kits basics se shuru hoti hain aur step-by-step instructions deti hain."
+    }
+  },
+  {
+    "id": 8,
+    "keywords": ["delivery", "shipping", "order time"],
+    "q": {
+      "en": "How long does delivery take?",
+      "hi": "Delivery me kitna time lagta hai?"
+    },
+    "a": {
+      "en": "Delivery usually takes 3–7 working days across India.",
+      "hi": "Delivery India me aam taur par 3–7 working days leti hai."
+    }
+  },
+  {
+    "id": 9,
+    "keywords": ["missing", "damaged", "broken", "replace"],
+    "q": {
+      "en": "What if a part is missing or damaged?",
+      "hi": "Agar koi part missing ya damaged ho to?"
+    },
+    "a": {
+      "en": "Contact our support team and we’ll replace the missing or damaged part quickly.",
+      "hi": "Support team se contact karein, hum missing/damaged part jaldi replace kar denge."
+    }
+  },
+  {
+    "id": 10,
+    "keywords": ["return", "refund", "return policy"],
+    "q": {
+      "en": "Do you offer returns or refunds?",
+      "hi": "Kya aap return ya refund dete ho?"
+    },
+    "a": {
+      "en": "Yes, we offer a 7-day return policy for unused kits in original packaging.",
+      "hi": "Haan, unused kits ke liye 7-day return policy available hai."
+    }
+  },
+
+  
+  {
+    "id": 11,
+    "keywords": ["workshop", "school program", "stem"],
+    "q": {
+      "en": "Do you organize workshops for schools?",
+      "hi": "Kya aap schools ke liye workshops karte ho?"
+    },
+    "a": {
+      "en": "Yes, we conduct robotics and STEM workshops for schools and learning centers.",
+      "hi": "Haan, hum schools aur learning centers ke liye robotics & STEM workshops karte hain."
+    }
+  },
+  {
+    "id": 12,
+    "keywords": ["demo", "trial", "school demo"],
+    "q": {
+      "en": "Can we get a demo before purchase?",
+      "hi": "Kya purchase se pehle demo mil sakta hai?"
+    },
+    "a": {
+      "en": "Yes, schools can request a free online demo session.",
+      "hi": "Haan, schools free online demo session request kar sakte hain."
+    }
+  },
+
+  
+  {
+    "id": 13,
+    "keywords": ["kit not working", "problem", "troubleshoot", "issue"],
+    "q": {
+      "en": "What if my kit stops working?",
+      "hi": "Agar meri kit kaam karna band kar de to?"
+    },
+    "a": {
+      "en": "You can message our team and we will troubleshoot or replace the component.",
+      "hi": "Aap hume message kar sakte hain, hum troubleshoot ya component replace kar denge."
+    }
+  },
+  {
+    "id": 14,
+    "keywords": ["certificate", "course certificate", "learning certificate"],
+    "q": {
+      "en": "Do you offer certification?",
+      "hi": "Kya aap certificate dete ho?"
+    },
+    "a": {
+      "en": "Yes, students receive a Tinkro Robotics Certificate after completing kits or workshops.",
+      "hi": "Haan, students ko kits/workshop complete karne par Tinkro Robotics Certificate milta hai."
+    }
+  },
+  {
+    "id": 15,
+    "keywords": ["international", "global", "outside india"],
+    "q": {
+      "en": "Is Tinkro available internationally?",
+      "hi": "Kya Tinkro international shipping karta hai?"
+    },
+    "a": {
+      "en": "Currently we deliver only across India. International shipping coming soon.",
+      "hi": "Abhi hum sirf India me deliver karte hain. International shipping jaldi aa rahi hai."
+    }
+  },
+
+
+  {
+    "id": 16,
+    "keywords": ["bulk", "bulk order", "school order", "discount", "wholesale"],
+    "q": {
+      "en": "Do you offer a discount on bulk orders?",
+      "hi": "Kya bulk order par discount milta hai?"
+    },
+    "a": {
+      "en": "Yes! Schools and bulk orders get special discounted prices and priority delivery.",
+      "hi": "Haan! Schools aur bulk orders par special discount aur priority delivery milti hai."
+    }
+  }
+]

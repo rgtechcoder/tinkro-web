@@ -1,0 +1,28 @@
+{
+  "info_buttons": [
+    "What is Tinkro?",
+    "Learning Benefits",
+    "For Schools",
+    "Contact Support"
+  ],
+
+  "product_buttons": [
+    "Cheapest kit",
+    "Show all kits",
+    "Arduino Kit",
+    "Sensor Kit"
+  ],
+
+  "cheapest": "✅ Our cheapest kit is the Beginner Robotics Kit (₹2499). It is perfect for ages 6–10 and includes motors, sensors and projects. 👉 Visit: https://tinkro.in/#product?id=1",
+
+  "allkits": "✅ Here are all available kits:\n• Beginner Robotics Kit – ₹2499\n• Advanced Robotics Kit – ₹4999\n• AI Programming Kit – ₹6999\n• Competition Robotics Kit – ₹8999\n• Sensor Expansion Pack – ₹1499\n👉 Visit all kits: https://tinkro.in",
+
+  "arduino": "✅ Arduino Starter Kits available!\nPerfect for coding + STEM learning.\n👉 https://tinkro.in/#product?id=1",
+
+  "sensor": "✅ Sensor Kit includes motion, light, sound and touch sensors.\nGreat for advanced STEM learning.\n👉 https://tinkro.in/#product?id=5",
+
+  "greeting": {
+    "en": "Hi! I can help you with product details, prices, or support.",
+    "hi": "Namaste! Main aapki help kar sakta hoon — products, prices ya support mein."
+  }
+}

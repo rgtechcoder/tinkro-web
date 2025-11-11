@@ -1,4 +1,6 @@
 // RazorpayService.js - Enhanced Payment Service with Testing
+import RewardService from './RewardService.js';
+
 export class RazorpayService {
   constructor() {
     this.keyId = import.meta.env.VITE_RAZORPAY_KEY_ID;
@@ -124,11 +126,37 @@ export class RazorpayService {
               currency: orderData.currency || 'INR',
               timestamp: new Date().toISOString(),
               customer: orderData.customer,
-              items: orderData.items || []
+              items: orderData.items || [],
+              appliedCoupon: orderData.appliedCoupon || null
             };
 
             // Save payment to localStorage for order history
             this.savePaymentRecord(paymentData);
+
+            // Add reward points for successful order
+            try {
+              const rewardResult = RewardService.addRewardPoints(
+                orderData.customer?.email || 'user', 
+                orderData.amount
+              );
+              
+              // Add reward history entry
+              RewardService.addRewardHistory({
+                type: 'order_completed',
+                points: rewardResult.pointsAdded,
+                description: `Order #${paymentData.razorpay_payment_id.substring(0, 8)}`,
+                orderId: paymentData.razorpay_payment_id
+              });
+
+              // Mark coupon as used if applied
+              if (orderData.appliedCoupon) {
+                RewardService.useCoupon(orderData.appliedCoupon.code);
+              }
+
+              paymentData.rewardInfo = rewardResult;
+            } catch (error) {
+              console.error('Error processing rewards:', error);
+            }
 
             resolve({
               success: true,
@@ -261,6 +289,55 @@ export class RazorpayService {
       testMode: this.isTestMode,
       keyId: this.keyId ? this.keyId.substring(0, 10) + '...' : 'Not configured'
     };
+  }
+
+  // Apply coupon to order
+  applyCoupon(orderAmount, couponCode) {
+    const couponResult = RewardService.applyCoupon(couponCode);
+    
+    if (!couponResult.success) {
+      return couponResult;
+    }
+
+    const discount = Math.min(couponResult.discount, orderAmount);
+    const finalAmount = Math.max(0, orderAmount - discount);
+
+    return {
+      success: true,
+      originalAmount: orderAmount,
+      discount: discount,
+      finalAmount: finalAmount,
+      coupon: couponResult.coupon,
+      savings: discount
+    };
+  }
+
+  // Calculate order total with coupon
+  calculateOrderTotal(items, couponCode = null) {
+    const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const tax = subtotal * 0.18; // 18% GST
+    const total = subtotal + tax;
+
+    let result = {
+      subtotal,
+      tax,
+      total,
+      discount: 0,
+      finalAmount: total,
+      appliedCoupon: null
+    };
+
+    if (couponCode) {
+      const couponResult = this.applyCoupon(total, couponCode);
+      if (couponResult.success) {
+        result.discount = couponResult.discount;
+        result.finalAmount = couponResult.finalAmount;
+        result.appliedCoupon = couponResult.coupon;
+        result.savings = couponResult.savings;
+      }
+    }
+
+    return result;
   }
 
   // Verify payment (client-side basic verification)

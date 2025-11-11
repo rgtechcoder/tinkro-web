@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
-import ContactQueryService from '../services/ContactQueryService';
+import firebaseContactService from '../services/FirebaseContactService';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -15,6 +15,9 @@ const Contact = () => {
     phone: '',
     message: '',
   });
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -29,33 +32,29 @@ const Contact = () => {
       return;
     }
 
+    setIsSubmitting(true);
+
     try {
       // Save query to admin panel
-      const result = ContactQueryService.addQuery(formData);
+      const result = await firebaseContactService.addQuery(formData);
       
       if (result.success) {
-        toast({
-          title: "Message Sent! 🎉",
-          description: `Thank you for contacting us, ${formData.name}! We'll get back to you soon. Query ID: ${result.query.id.slice(-8)}`,
-          duration: 4000,
-        });
-        
-        // Reset form
-        setFormData({ name: '', email: '', phone: '', message: '' });
-        
+        setIsSubmitted(true);
+        // Reset form after 3 seconds
+        setTimeout(() => {
+          setFormData({ name: '', email: '', phone: '', message: '' });
+          setIsSubmitted(false);
+        }, 3000);
         console.log('Contact query saved:', result.query);
       } else {
         throw new Error(result.error || 'Failed to save query');
       }
     } catch (error) {
       console.error('Error submitting contact form:', error);
-      toast({
-        title: "Message Sent! 🎉", 
-        description: "Thank you for contacting us. We'll get back to you soon!",
-        duration: 3000,
-      });
       // Still reset form even if backend fails
       setFormData({ name: '', email: '', phone: '', message: '' });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -136,10 +135,31 @@ const Contact = () => {
                   </div>
                   <Button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-blue-600 to-orange-500 hover:from-blue-700 hover:to-orange-600"
+                    disabled={isSubmitting || isSubmitted}
+                    className={`w-full transition-all duration-300 ${
+                      isSubmitted 
+                        ? 'bg-green-600 hover:bg-green-700' 
+                        : 'bg-gradient-to-r from-blue-600 to-orange-500 hover:from-blue-700 hover:to-orange-600'
+                    }`}
                   >
-                    <Send className="mr-2 h-4 w-4" />
-                    Send Message
+                    {isSubmitting ? (
+                      <>
+                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        Sending...
+                      </>
+                    ) : isSubmitted ? (
+                      <>
+                        <svg className="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        Thanks! Message Sent
+                      </>
+                    ) : (
+                      <>
+                        <Send className="mr-2 h-4 w-4" />
+                        Send Message
+                      </>
+                    )}
                   </Button>
                 </form>
               </div>

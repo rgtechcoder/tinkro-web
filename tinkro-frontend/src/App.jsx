@@ -10,19 +10,21 @@ import Contact from '@/pages/Contact';
 // NEW: Added Admin Dashboard import
 import AdminDashboard from '@/pages/AdminDashboard';
 // NEW: Added Authentication pages
-import AuthPage from '@/pages/AuthPage';
-import UserProfile from '@/pages/UserProfile';
+import AuthPage from './pages/AuthPage';
+import UserProfile from './pages/UserProfile_Fixed';
 import UserDashboard from '@/components/UserDashboard';
 import Cart from '@/components/Cart';
 import Footer from '@/components/Footer';
 import { Toaster } from '@/components/ui/toaster';
+import { Toaster as SonnerToaster } from 'sonner';
 import ChatBot from './chatbot/ChatBot'; // NEW: Importing ChatBot component
 
 function App() {
   // Check URL hash for page navigation including auth routes
   const [currentPage, setCurrentPage] = useState(() => {
     const hash = window.location.hash.replace('#', '');
-    return ['admin', 'auth', 'profile'].includes(hash) ? hash : 'home';
+    const validPages = ['admin', 'auth', 'profile', 'user-dashboard', 'products', 'about', 'blog', 'contact'];
+    return validPages.includes(hash) ? hash : 'home';
   });
   
   // OLD: const [cartItems, setCartItems] = useState([]);
@@ -47,6 +49,17 @@ function App() {
     }
   });
 
+  // Function to refresh user data
+  const refreshAppUser = () => {
+    try {
+      const savedUser = localStorage.getItem('tinkro_current_user');
+      const updatedUser = savedUser ? JSON.parse(savedUser) : null;
+      setUser(updatedUser);
+    } catch (error) {
+      console.error('Error refreshing user data:', error);
+    }
+  };
+
   // NEW: Save cart to localStorage whenever cartItems changes
   useEffect(() => {
     try {
@@ -63,7 +76,8 @@ function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '');
-      if (['admin', 'auth', 'profile'].includes(hash)) {
+      const validPages = ['admin', 'auth', 'profile', 'user-dashboard', 'products', 'about', 'blog', 'contact'];
+      if (validPages.includes(hash)) {
         setCurrentPage(hash);
       } else {
         setCurrentPage('home');
@@ -73,6 +87,46 @@ function App() {
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
+
+  // Secret keyboard shortcut to access admin panel (Ctrl+Shift+A)
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      // Check for Ctrl+Shift+A (or Cmd+Shift+A on Mac)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'A') {
+        e.preventDefault();
+        console.log('🔐 Secret admin access activated');
+        navigateToPage('admin');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, []);
+
+  // Enhanced setCurrentPage to also update URL hash
+  const navigateToPage = (page) => {
+    setCurrentPage(page);
+    if (page !== 'home') {
+      window.location.hash = page;
+    } else {
+      window.location.hash = '';
+    }
+  };
+
+  // OPTIMIZED: Auto scroll to top when page changes
+  useEffect(() => {
+    // Immediate scroll with requestAnimationFrame for better performance
+    const performScroll = () => {
+      requestAnimationFrame(() => {
+        window.scrollTo({ 
+          top: 0, 
+          behavior: 'smooth' 
+        });
+      });
+    };
+    
+    performScroll();
+  }, [currentPage]);
 
   const addToCart = (product) => {
     setCartItems(prev => {
@@ -111,11 +165,11 @@ function App() {
   const renderPage = () => {
     switch (currentPage) {
       case 'home':
-        return <Home setCurrentPage={setCurrentPage} />;
+        return <Home setCurrentPage={navigateToPage} />;
       case 'products':
-        return <Products addToCart={addToCart} />;
+        return <Products addToCart={addToCart} setCurrentPage={navigateToPage} />;
       case 'about':
-        return <About />;
+        return <About setCurrentPage={navigateToPage} />;
       case 'blog':
         return <Blog />;
       case 'contact':
@@ -124,15 +178,20 @@ function App() {
         return <AuthPage onAuthSuccess={(userData) => {
           // Set user and redirect to dashboard
           setUser(userData);
-          setCurrentPage('user-dashboard');
+          navigateToPage('user-dashboard');
         }} />;
       case 'user-dashboard':
-        return user ? <UserDashboard user={user} onLogout={() => {
-          setUser(null);
-          setCurrentPage('home');
-        }} setCurrentPage={setCurrentPage} /> : <AuthPage onAuthSuccess={(userData) => {
+        return user ? <UserDashboard 
+          user={user} 
+          onLogout={() => {
+            setUser(null);
+            navigateToPage('home');
+          }} 
+          setCurrentPage={navigateToPage}
+          onUserUpdate={refreshAppUser}
+        /> : <AuthPage onAuthSuccess={(userData) => {
           setUser(userData);
-          setCurrentPage('user-dashboard');
+          navigateToPage('user-dashboard');
         }} />;
       case 'profile':
         return <UserProfile />;
@@ -231,15 +290,16 @@ function App() {
       <div className="min-h-screen flex flex-col bg-white">
         <Header 
           currentPage={currentPage} 
-          setCurrentPage={setCurrentPage}
+          navigateToPage={navigateToPage}
           cartItemsCount={cartItems.length}
           setIsCartOpen={setIsCartOpen}
+          user={user}
         />
         <main className="flex-grow">
           {renderPage()}
         </main>
         <ChatBot /> {/* NEW: ChatBot component added here */}
-        <Footer setCurrentPage={setCurrentPage} />
+        <Footer navigateToPage={navigateToPage} />
         <Cart
           isOpen={isCartOpen}
           setIsOpen={setIsCartOpen}
@@ -250,6 +310,7 @@ function App() {
         />
         {/* ...existing code... */}
         <Toaster />
+        <SonnerToaster position="top-right" />
       </div>
     </>
   );

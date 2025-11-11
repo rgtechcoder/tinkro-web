@@ -31,10 +31,10 @@ class AuthService {
       uid: user.uid,
       email: user.email,
       displayName: user.displayName || 'Tinkro User',
-      photoURL: user.photoURL || '/default-avatar.png',
-      phoneNumber: user.phoneNumber,
-      emailVerified: user.emailVerified,
-      createdAt: user.metadata.creationTime,
+      photoURL: user.photoURL || null, // Don't force default avatar here
+      phoneNumber: user.phoneNumber || '',
+      emailVerified: user.emailVerified || false,
+      createdAt: user.createdAt || (user.metadata?.creationTime || new Date().toISOString()),
       lastLogin: new Date().toISOString(),
       loginMethod: this.getLoginMethod(user),
       role: this.getUserRole(user.email),
@@ -44,7 +44,7 @@ class AuthService {
     };
     
     localStorage.setItem('tinkro_user', JSON.stringify(userData));
-    localStorage.setItem('tinkro_auth_token', user.accessToken || 'firebase-auth');
+    localStorage.setItem('tinkro_auth_token', user.accessToken || 'local-auth-token');
     
     // Track login analytics
     this.trackLogin(userData);
@@ -512,15 +512,37 @@ class AuthService {
     const user = this.getCurrentUser();
     if (!user) return false;
 
-    const profiles = JSON.parse(localStorage.getItem('tinkro_user_profiles') || '[]');
-    const profileIndex = profiles.findIndex(p => p.uid === user.uid);
-    
-    if (profileIndex >= 0) {
-      profiles[profileIndex] = { ...profiles[profileIndex], ...updates };
+    try {
+      // Update main user data
+      const updatedUser = { ...user, ...updates };
+      localStorage.setItem('tinkro_user', JSON.stringify(updatedUser));
+      this.currentUser = updatedUser;
+
+      // Update user profiles array
+      const profiles = JSON.parse(localStorage.getItem('tinkro_user_profiles') || '[]');
+      const profileIndex = profiles.findIndex(p => p.uid === user.uid);
+      
+      if (profileIndex >= 0) {
+        profiles[profileIndex] = { ...profiles[profileIndex], ...updates };
+      } else {
+        // Create new profile if doesn't exist
+        profiles.push({ uid: user.uid, ...updates });
+      }
       localStorage.setItem('tinkro_user_profiles', JSON.stringify(profiles));
+
+      // Update users list if needed
+      const users = JSON.parse(localStorage.getItem('tinkro_users') || '[]');
+      const userIndex = users.findIndex(u => u.uid === user.uid);
+      if (userIndex >= 0) {
+        users[userIndex] = { ...users[userIndex], ...updates };
+        localStorage.setItem('tinkro_users', JSON.stringify(users));
+      }
+
       return true;
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      return false;
     }
-    return false;
   }
 
   // Error Messages in English

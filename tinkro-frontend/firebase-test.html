@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Firebase Test</title>
+</head>
+<body>
+    <h1>Firebase Connection Test</h1>
+    <div id="status">Testing...</div>
+    
+    <script type="module">
+        // Test Firebase connection
+        const firebaseConfig = {
+            apiKey: "AIzaSyBfSJeKJG4n_KSWzz656xpL7HXLR9WnBvw",
+            authDomain: "tinkro-web-database.firebaseapp.com",
+            projectId: "tinkro-web-database",
+            storageBucket: "tinkro-web-database.appspot.com",
+            messagingSenderId: "959260509327",
+            appId: "1:959260509327:web:7579531e4f1fefa6905cfa",
+            measurementId: "G-C2D1WJ5LMH"
+        };
+
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        try {
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+            
+            console.log('✅ Firebase initialized successfully');
+            document.getElementById('status').innerHTML = '✅ Firebase Connected!';
+            
+            // Test Firestore read
+            const testCollection = collection(db, 'products');
+            getDocs(testCollection).then(snapshot => {
+                console.log('✅ Firestore accessible, documents:', snapshot.size);
+                document.getElementById('status').innerHTML += '<br>✅ Firestore Working! Documents: ' + snapshot.size;
+            }).catch(error => {
+                console.error('❌ Firestore error:', error);
+                document.getElementById('status').innerHTML += '<br>❌ Firestore Error: ' + error.message;
+            });
+            
+        } catch (error) {
+            console.error('❌ Firebase error:', error);
+            document.getElementById('status').innerHTML = '❌ Firebase Error: ' + error.message;
+        }
+    </script>
+</body>
+</html>

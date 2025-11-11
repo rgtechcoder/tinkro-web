@@ -1,7 +1,7 @@
 import React from 'react';
-import { Instagram, Mail, Phone, Youtube } from 'lucide-react';
+import { Instagram, Mail, Phone, Youtube, MessageCircle, Linkedin, Twitter, Facebook } from 'lucide-react';
 
-const Footer = ({ setCurrentPage }) => {
+const Footer = ({ navigateToPage }) => {
   return (
     <footer className="bg-gray-900 text-white">
       <div className="container mx-auto px-4 py-12">
@@ -18,16 +18,16 @@ const Footer = ({ setCurrentPage }) => {
           <div>
             <span className="font-semibold text-lg mb-4 block">Quick Links</span>
             <div className="space-y-2">
-              <button onClick={() => setCurrentPage('home')} className="block text-gray-300 hover:text-white transition-colors text-sm">
+              <button onClick={() => navigateToPage('home')} className="block text-gray-300 hover:text-white transition-colors text-sm">
                 Home
               </button>
-              <button onClick={() => setCurrentPage('products')} className="block text-gray-300 hover:text-white transition-colors text-sm">
+              <button onClick={() => navigateToPage('products')} className="block text-gray-300 hover:text-white transition-colors text-sm">
                 Products
               </button>
-              <button onClick={() => setCurrentPage('about')} className="block text-gray-300 hover:text-white transition-colors text-sm">
+              <button onClick={() => navigateToPage('about')} className="block text-gray-300 hover:text-white transition-colors text-sm">
                 About Us
               </button>
-              <button onClick={() => setCurrentPage('blog')} className="block text-gray-300 hover:text-white transition-colors text-sm">
+              <button onClick={() => navigateToPage('blog')} className="block text-gray-300 hover:text-white transition-colors text-sm">
                 Blog
               </button>
             </div>
@@ -58,7 +58,7 @@ const Footer = ({ setCurrentPage }) => {
                 href="https://instagram.com/tinkrokits"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors text-sm"
+                className="flex items-center space-x-2 text-gray-300 hover:text-pink-400 transition-colors text-sm"
               >
                 <Instagram className="h-5 w-5" />
                 <span>@tinkrokits</span>
@@ -67,10 +67,46 @@ const Footer = ({ setCurrentPage }) => {
                 href="https://youtube.com/@tinkro?si=tuFbEas0sHTFbni4"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors text-sm"
+                className="flex items-center space-x-2 text-gray-300 hover:text-red-400 transition-colors text-sm"
               >
                 <Youtube className="h-5 w-5" />
                 <span>Tinkro YouTube</span>
+              </a>
+              <a
+                href="https://linkedin.com/company/tinkro"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center space-x-2 text-gray-300 hover:text-blue-400 transition-colors text-sm"
+              >
+                <Linkedin className="h-5 w-5" />
+                <span>LinkedIn</span>
+              </a>
+              <a
+                href="https://wa.me/919644525429?text=Hi%20Tinkro%2C%20I%20want%20to%20know%20about%20robotics%20kits"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center space-x-2 text-gray-300 hover:text-green-400 transition-colors text-sm"
+              >
+                <MessageCircle className="h-5 w-5" />
+                <span>WhatsApp Chat</span>
+              </a>
+              <a
+                href="https://whatsapp.com/channel/0029VaQXKgJKmL8jJ5P0mP0m"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center space-x-2 text-gray-300 hover:text-green-500 transition-colors text-sm"
+              >
+                <MessageCircle className="h-5 w-5" />
+                <span>Tinkro Channel</span>
+              </a>
+              <a
+                href="https://facebook.com/tinkrokits"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center space-x-2 text-gray-300 hover:text-blue-500 transition-colors text-sm"
+              >
+                <Facebook className="h-5 w-5" />
+                <span>Facebook</span>
               </a>
             </div>
           </div>
@@ -78,7 +114,7 @@ const Footer = ({ setCurrentPage }) => {
 
         <div className="border-t border-gray-700 mt-8 pt-8 text-center">
           <p className="text-gray-400 text-sm">
-            © 2025 Tinkro. All rights reserved. | www.tinkro.in
+            © 2025 Tinkro Edutech LLP . All rights reserved. | www.tinkro.in
           </p>
         </div>
       </div>

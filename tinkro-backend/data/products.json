@@ -1,22 +1,74 @@
 [
   {
     "id": 1,
-    "name": "Arduino Starter Kit",
-    "price": 799,
-    "currency": "INR",
-    "category": "kit",
-    "stock": 24,
-    "url": "https://tinkro.in/products/arduino-starter-kit",
-    "short_desc": "Basic Arduino starter kit with sensors and wires."
+    "keyword": "beginner robotics kit",
+    "name": "Beginner Robotics Kit",
+    "price": 2499,
+    "description": "Perfect starter kit for class 6-8 students. Includes motors, sensors, and easy-to-follow guide.",
+    "category": "Arduino Kits",
+    "stock": 50,
+    "status": "published",
+    "featured": true,
+    "url": "https://tinkro.in/#product?id=1"
   },
   {
     "id": 2,
-    "name": "Smart Sensor Kit",
-    "price": 1299,
-    "currency": "INR",
-    "category": "kit",
-    "stock": 12,
-    "url": "https://tinkro.in/products/sensor-kit",
-    "short_desc": "Sensor bundle for IoT experiments."
+    "keyword": "advanced robotics kit",
+    "name": "Advanced Robotics Kit",
+    "price": 4999,
+    "description": "For class 9-12 students. Advanced sensors, programmable microcontroller, and complex projects.",
+    "category": "Advanced Kits",
+    "stock": 30,
+    "status": "published",
+    "featured": true,
+    "url": "https://tinkro.in/#product?id=2"
+  },
+  {
+    "id": 3,
+    "keyword": "school bulk pack",
+    "name": "School Bulk Pack (10 Kits)",
+    "price": 22999,
+    "description": "Special bulk pricing for schools. Includes 10 beginner kits with teacher training materials.",
+    "category": "Bulk Packs",
+    "stock": 15,
+    "status": "published",
+    "featured": false,
+    "url": "https://tinkro.in/#product?id=3"
+  },
+  {
+    "id": 4,
+    "keyword": "ai programming kit",
+    "name": "AI Programming Kit",
+    "price": 6999,
+    "description": "Learn AI and machine learning with hands-on robotics projects. Includes Python programming guide.",
+    "category": "AI Kits",
+    "stock": 25,
+    "status": "published",
+    "featured": true,
+    "url": "https://tinkro.in/#product?id=4"
+  },
+  {
+    "id": 5,
+    "keyword": "sensor kit",
+    "name": "Sensor Expansion Pack",
+    "price": 1499,
+    "description": "Additional sensors and modules to expand your existing robotics projects.",
+    "category": "Accessories",
+    "stock": 40,
+    "status": "published",
+    "featured": false,
+    "url": "https://tinkro.in/#product?id=5"
+  },
+  {
+    "id": 6,
+    "keyword": "arduino kit",
+    "name": "Competition Robotics Kit",
+    "price": 8999,
+    "description": "Professional-grade kit for robotics competitions. Includes premium components and tools.",
+    "category": "Competition Kits",
+    "stock": 20,
+    "status": "published",
+    "featured": true,
+    "url": "https://tinkro.in/#product?id=6"
   }
 ]

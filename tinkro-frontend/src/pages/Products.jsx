@@ -1,19 +1,47 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingCart, ChevronLeft, ChevronRight, Star } from 'lucide-react';
+import { ShoppingCart, ChevronLeft, ChevronRight, Star, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
+import firebaseWishlistService from '@/services/FirebaseWishlistService';
 
-const Products = ({ addToCart }) => {
+const Products = ({ addToCart, setCurrentPage: navigateToPage }) => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState(['All']);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [currentPage, setCurrentPage] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+  const [wishlist, setWishlist] = useState([]);
+  const [user, setUser] = useState(null);
 
-  // Original products data - exactly as it was before
+  // Check if user is logged in
+  useEffect(() => {
+    const currentUser = JSON.parse(localStorage.getItem('tinkro_current_user') || 'null');
+    setUser(currentUser);
+    
+    // Load user's wishlist from Firebase
+    if (currentUser) {
+      loadUserWishlist(currentUser);
+    }
+  }, []);
+
+  const loadUserWishlist = async (currentUser) => {
+    const userId = currentUser.uid || currentUser.id;
+    try {
+      const userWishlist = await firebaseWishlistService.getUserWishlist(userId);
+      console.log('✅ Loaded wishlist from Firebase:', userWishlist.length);
+      setWishlist(Array.isArray(userWishlist) ? userWishlist : []);
+    } catch (error) {
+      console.error('❌ Error loading wishlist:', error);
+      // Fallback to localStorage if Firebase fails
+      const localWishlist = JSON.parse(localStorage.getItem(`wishlist_${userId}`) || '[]');
+      setWishlist(Array.isArray(localWishlist) ? localWishlist : []);
+    }
+  };
+
+  // Original products fallback
   const originalProducts = [
     {
       id: 1,
@@ -83,41 +111,84 @@ const Products = ({ addToCart }) => {
     }
   ];
 
-  // Simple loading without any external service calls
+  // FIXED: Proper Firebase real-time listener
   useEffect(() => {
-    console.log('🔄 Loading original products data...');
+    console.log('🔄 Starting Firebase real-time listener...');
     setIsLoading(true);
     
-    // Simulate loading for better UX
-    setTimeout(() => {
+    let unsubscriber = null;
+    
+    const initFirebase = async () => {
       try {
-        const publishedProducts = originalProducts.filter(p => p.status === 'published');
-        setProducts(publishedProducts);
+        const { db } = await import('../config/firebase.js');
+        const { collection, onSnapshot } = await import('firebase/firestore');
         
-        const cats = [...new Set(publishedProducts.map(p => p.category))];
-        setCategories(['All', ...cats]);
+        if (!db) {
+          throw new Error('Firebase not available');
+        }
         
-        console.log('✅ Original products loaded successfully:', publishedProducts.length);
-        setIsLoading(false);
+        console.log('📡 Firebase connected, setting up listener...');
+        
+        unsubscriber = onSnapshot(collection(db, 'products'), (snapshot) => {
+          console.log('🔄 Real-time update! Size:', snapshot.size);
+          
+          const firebaseProducts = [];
+          snapshot.forEach((doc) => {
+            firebaseProducts.push({ id: doc.id, ...doc.data() });
+          });
+          
+          const published = firebaseProducts.filter(p => p.status === 'published');
+          setProducts(published);
+          
+          const cats = [...new Set(published.map(p => p.category))];
+          setCategories(['All', ...cats]);
+          setIsLoading(false);
+          
+          console.log('✅ Products updated:', published.length);
+        });
+        
       } catch (error) {
-        console.error('❌ Error loading products:', error);
-        setProducts([]);
-        setCategories(['All']);
+        console.error('❌ Firebase error:', error);
+        
+        // Use fallback products
+        const fallback = originalProducts.filter(p => p.status === 'published');
+        setProducts(fallback);
+        setCategories(['All', ...new Set(fallback.map(p => p.category))]);
         setIsLoading(false);
+        console.log('📦 Using fallback products:', fallback.length);
       }
-    }, 500);
+    };
+    
+    initFirebase();
+    
+    // Proper cleanup function
+    return () => {
+      console.log('🔌 Cleaning up Firebase listener');
+      if (typeof unsubscriber === 'function') {
+        unsubscriber();
+      }
+    };
   }, []);
   
-  // Filter products by category
-  const filteredProducts = selectedCategory === 'All' 
-    ? products 
-    : products.filter(product => product.category === selectedCategory);
+  // Optimized filtering with useMemo
+  const filteredProducts = useMemo(() => {
+    return selectedCategory === 'All' 
+      ? products 
+      : products.filter(product => product.category === selectedCategory);
+  }, [products, selectedCategory]);
 
-  // Pagination logic (3 products per page)
-  const productsPerPage = 3;
-  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
-  const startIndex = currentPage * productsPerPage;
-  const visibleProducts = filteredProducts.slice(startIndex, startIndex + productsPerPage);
+  // Optimized pagination with useMemo
+  const { totalPages, visibleProducts } = useMemo(() => {
+    const productsPerPage = 3;
+    const pages = Math.ceil(filteredProducts.length / productsPerPage);
+    const startIndex = currentPage * productsPerPage;
+    const visible = filteredProducts.slice(startIndex, startIndex + productsPerPage);
+    
+    return {
+      totalPages: pages,
+      visibleProducts: visible
+    };
+  }, [filteredProducts, currentPage]);
 
   // Auto-slide functionality
   useEffect(() => {
@@ -151,6 +222,72 @@ const Products = ({ addToCart }) => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleWishlistToggle = async (product) => {
+    if (!user) {
+      // If not logged in, show login prompt
+      toast({
+        title: "Login Required",
+        description: "Please login or signup to add items to wishlist.",
+        action: (
+          <Button 
+            onClick={() => navigateToPage && navigateToPage('auth')}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            Login
+          </Button>
+        ),
+      });
+      return;
+    }
+
+    const userId = user.uid || user.id;
+    const currentWishlist = Array.isArray(wishlist) ? wishlist : [];
+    const isInWishlist = currentWishlist.some(item => item.id === product.id);
+
+    try {
+      // Toggle wishlist in Firebase
+      const updatedWishlist = await firebaseWishlistService.toggleWishlist(userId, product);
+      
+      // Ensure it's an array
+      const safeWishlist = Array.isArray(updatedWishlist) ? updatedWishlist : [];
+      setWishlist(safeWishlist);
+      
+      // Also update localStorage as backup
+      localStorage.setItem(`wishlist_${userId}`, JSON.stringify(safeWishlist));
+      
+      // Show success message
+      if (isInWishlist) {
+        toast({
+          title: "Removed from Wishlist",
+          description: `${product.name} has been removed from your wishlist.`,
+        });
+      } else {
+        toast({
+          title: "Added to Wishlist",
+          description: `${product.name} has been added to your wishlist.`,
+        });
+      }
+
+      // Dispatch custom event to notify Header to update wishlist count
+      console.log('🔄 Dispatching wishlistUpdated event, count:', safeWishlist.length);
+      window.dispatchEvent(new CustomEvent('wishlistUpdated', { 
+        detail: { count: safeWishlist.length } 
+      }));
+    } catch (error) {
+      console.error('❌ Error toggling wishlist:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update wishlist. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const isInWishlist = (productId) => {
+    if (!Array.isArray(wishlist)) return false;
+    return wishlist.some(item => item.id === productId);
   };
 
   if (isLoading) {
@@ -236,7 +373,7 @@ const Products = ({ addToCart }) => {
                 >
                   {visibleProducts.map((product, index) => (
                     <motion.div
-                      key={product.id}
+                      key={`${product.id}-${index}`}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }}
@@ -255,8 +392,27 @@ const Products = ({ addToCart }) => {
                             Featured
                           </div>
                         )}
-                        <div className="absolute top-4 right-4 bg-white bg-opacity-90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
-                          Stock: {product.stock}
+                        <div className="absolute top-4 right-4 flex space-x-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleWishlistToggle(product);
+                            }}
+                            className={`p-2 rounded-full transition-all duration-200 ${
+                              isInWishlist(product.id)
+                                ? 'bg-red-500 text-white'
+                                : 'bg-white bg-opacity-90 backdrop-blur-sm text-gray-700 hover:bg-red-500 hover:text-white'
+                            }`}
+                          >
+                            <Heart 
+                              className={`w-5 h-5 ${
+                                isInWishlist(product.id) ? 'fill-current' : ''
+                              }`}
+                            />
+                          </button>
+                          <div className="bg-white bg-opacity-90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
+                            Stock: {product.stock}
+                          </div>
                         </div>
                       </div>
 
@@ -336,4 +492,4 @@ const Products = ({ addToCart }) => {
   );
 };
 
-export default Products;
+export default React.memo(Products);

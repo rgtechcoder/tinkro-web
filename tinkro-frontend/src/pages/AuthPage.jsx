@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaGoogle, FaFacebook, FaPhone, FaEye, FaEyeSlash, FaUser, FaEnvelope, FaLock, FaArrowLeft } from 'react-icons/fa';
-import authService from '../services/SimpleAuthService';
+import firebaseAuthService from '../services/FirebaseAuthService';
 
 const AuthPage = ({ onAuthSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -126,9 +126,9 @@ const AuthPage = ({ onAuthSuccess }) => {
     try {
       let result;
       if (isLogin) {
-        result = await authService.signInWithEmail(formData.email, formData.password);
+        result = await firebaseAuthService.loginWithEmail(formData.email, formData.password);
       } else {
-        result = await authService.signUpWithEmail(
+        result = await firebaseAuthService.registerWithEmail(
           formData.email, 
           formData.password, 
           formData.displayName
@@ -161,17 +161,23 @@ const AuthPage = ({ onAuthSuccess }) => {
     setError('');
 
     try {
-      const result = await authService.signInWithGoogle();
+      const result = await firebaseAuthService.signInWithGoogle();
+      console.log('Google login result:', result);
+      
       if (result.success) {
         setSuccess(result.message);
         setTimeout(() => {
-          window.location.href = authService.isAdmin() ? '/admin' : '/';
+          if (onAuthSuccess) {
+            onAuthSuccess(result.user);
+          }
         }, 1500);
       } else {
-        setError(result.message);
+        setError(result.error || 'Google sign-in failed');
+        console.error('Google login error:', result.error);
       }
     } catch (error) {
-      setError('Google sign-in failed! Please try again.');
+      console.error('Google sign-in exception:', error);
+      setError(error.message || 'Google sign-in failed! Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -183,17 +189,23 @@ const AuthPage = ({ onAuthSuccess }) => {
     setError('');
 
     try {
-      const result = await authService.signInWithFacebook();
+      const result = await firebaseAuthService.signInWithFacebook();
+      console.log('Facebook login result:', result);
+      
       if (result.success) {
         setSuccess(result.message);
         setTimeout(() => {
-          window.location.href = authService.isAdmin() ? '/admin' : '/';
+          if (onAuthSuccess) {
+            onAuthSuccess(result.user);
+          }
         }, 1500);
       } else {
-        setError(result.message);
+        setError(result.error || 'Facebook sign-in failed');
+        console.error('Facebook login error:', result.error);
       }
     } catch (error) {
-      setError('Facebook sign-in failed! Please try again.');
+      console.error('Facebook sign-in exception:', error);
+      setError(error.message || 'Facebook sign-in failed! Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -208,25 +220,22 @@ const AuthPage = ({ onAuthSuccess }) => {
     setError('');
 
     try {
-      // Setup reCAPTCHA if not already done
-      if (!authService.recaptchaVerifier) {
-        authService.setupRecaptcha('recaptcha-container');
-      }
+      // Add +91 prefix for Indian numbers
+      const phoneWithCode = formData.phoneNumber.startsWith('+') 
+        ? formData.phoneNumber 
+        : `+91${formData.phoneNumber}`;
 
-      const result = await authService.signInWithPhone(
-        formData.phoneNumber, 
-        authService.recaptchaVerifier
-      );
+      const result = await firebaseAuthService.sendOTP(phoneWithCode);
 
       if (result.success) {
-        setConfirmationResult(result.confirmationResult);
         setShowOTP(true);
         setCountdown(60);
-        setSuccess(result.message);
+        setSuccess('OTP sent to your phone number');
       } else {
-        setError(result.message);
+        setError(result.error || 'Failed to send OTP');
       }
     } catch (error) {
+      console.error('Phone auth error:', error);
       setError('Phone authentication failed! Please try again.');
     } finally {
       setIsLoading(false);
@@ -245,16 +254,23 @@ const AuthPage = ({ onAuthSuccess }) => {
     setError('');
 
     try {
-      const result = await authService.verifyOTP(confirmationResult, formData.otp);
+      const result = await firebaseAuthService.verifyOTP(formData.otp, {
+        phoneNumber: formData.phoneNumber,
+        displayName: formData.displayName || `User_${formData.phoneNumber.slice(-4)}`
+      });
+      
       if (result.success) {
-        setSuccess(result.message);
+        setSuccess('Login successful!');
         setTimeout(() => {
-          window.location.href = authService.isAdmin() ? '/admin' : '/';
+          if (onAuthSuccess) {
+            onAuthSuccess(result.user);
+          }
         }, 1500);
       } else {
-        setError(result.message);
+        setError(result.error || 'OTP verification failed');
       }
     } catch (error) {
+      console.error('OTP verification error:', error);
       setError('OTP verification failed! Please check and try again.');
     } finally {
       setIsLoading(false);

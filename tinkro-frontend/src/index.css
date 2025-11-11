@@ -1,3 +1,11 @@
+/* Responsive images for homepage and cards */
+.responsive-img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 16px;
+  box-shadow: 0 2px 16px rgba(25,118,210,0.08);
+}
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
