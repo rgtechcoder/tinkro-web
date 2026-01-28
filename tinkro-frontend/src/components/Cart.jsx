@@ -7,7 +7,8 @@ import CustomerForm from './CustomerForm';
 import EmailService from '../services/EmailService';
 import OrderManager from '../services/OrderManager';
 
-const Cart = ({ isOpen, setIsOpen, cartItems, updateQuantity, removeItem, totalPrice }) => {
+// Added currentUserEmail prop for generic fix
+const Cart = ({ isOpen, setIsOpen, cartItems, updateQuantity, removeItem, totalPrice, currentUserEmail }) => {
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [currentOrder, setCurrentOrder] = useState(null);
 
@@ -38,18 +39,22 @@ const Cart = ({ isOpen, setIsOpen, cartItems, updateQuantity, removeItem, totalP
 
   const handleCustomerFormSubmit = async (customerData) => {
     console.log("Starting payment process for:", customerData);
-    
+
+    // Always use logged-in user's email for order linkage
+    const emailToUse = currentUserEmail || customerData.email;
+
     // Extract promo information
     const finalAmount = customerData.finalPrice || totalPrice;
     const originalAmount = customerData.originalPrice || totalPrice;
     const appliedPromo = customerData.appliedPromo;
     const discount = customerData.discount || 0;
-    
+
     console.log("Payment amounts:", { originalAmount, finalAmount, discount, appliedPromo });
-    
-    // Create order in system with promo details
+
+    // Create order in system with promo details, always using currentUserEmail
     const orderData = {
       ...customerData,
+      email: emailToUse,
       originalAmount,
       finalAmount,
       discount,

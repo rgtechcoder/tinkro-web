@@ -113,60 +113,37 @@ const Products = ({ addToCart, setCurrentPage: navigateToPage }) => {
 
   // FIXED: Proper Firebase real-time listener
   useEffect(() => {
-    console.log('🔄 Starting Firebase real-time listener...');
-    setIsLoading(true);
-    
+    // Show fallback products instantly for fast first paint
+    const fallback = originalProducts.filter(p => p.status === 'published');
+    setProducts(fallback);
+    setCategories(['All', ...new Set(fallback.map(p => p.category))]);
+    setIsLoading(false);
+
     let unsubscriber = null;
-    
     const initFirebase = async () => {
       try {
         const { db } = await import('../config/firebase.js');
         const { collection, onSnapshot } = await import('firebase/firestore');
-        
-        if (!db) {
-          throw new Error('Firebase not available');
-        }
-        
-        console.log('📡 Firebase connected, setting up listener...');
-        
+        if (!db) throw new Error('Firebase not available');
         unsubscriber = onSnapshot(collection(db, 'products'), (snapshot) => {
-          console.log('🔄 Real-time update! Size:', snapshot.size);
-          
           const firebaseProducts = [];
           snapshot.forEach((doc) => {
             firebaseProducts.push({ id: doc.id, ...doc.data() });
           });
-          
           const published = firebaseProducts.filter(p => p.status === 'published');
           setProducts(published);
-          
           const cats = [...new Set(published.map(p => p.category))];
           setCategories(['All', ...cats]);
           setIsLoading(false);
-          
-          console.log('✅ Products updated:', published.length);
         });
-        
       } catch (error) {
+        // Already showing fallback, just log error
         console.error('❌ Firebase error:', error);
-        
-        // Use fallback products
-        const fallback = originalProducts.filter(p => p.status === 'published');
-        setProducts(fallback);
-        setCategories(['All', ...new Set(fallback.map(p => p.category))]);
-        setIsLoading(false);
-        console.log('📦 Using fallback products:', fallback.length);
       }
     };
-    
     initFirebase();
-    
-    // Proper cleanup function
     return () => {
-      console.log('🔌 Cleaning up Firebase listener');
-      if (typeof unsubscriber === 'function') {
-        unsubscriber();
-      }
+      if (typeof unsubscriber === 'function') unsubscriber();
     };
   }, []);
   
@@ -385,6 +362,7 @@ const Products = ({ addToCart, setCurrentPage: navigateToPage }) => {
                           src={product.image}
                           alt={product.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
                         />
                         {product.featured && (
                           <div className="absolute top-4 left-4 bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-medium">

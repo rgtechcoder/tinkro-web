@@ -231,7 +231,10 @@ const Header = ({
             initial={{ opacity: 0, x: -20 }} 
             animate={{ opacity: 1, x: 0 }} 
             className="flex items-center space-x-3 cursor-pointer hover:scale-105 transition-transform" 
-            onClick={() => navigateToPage('home')}
+            onClick={() => {
+              navigateToPage('home');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
           >
             <img 
               src="https://horizons-cdn.hostinger.com/e7c9821b-6b7a-44e2-b895-23441ddb63a1/d68cad29faeccc76733f807b9ad82502.png" 
@@ -243,7 +246,10 @@ const Header = ({
           <nav className="hidden md:flex items-center space-x-8">
             {navItems.map(item => <button 
               key={item.id} 
-              onClick={() => navigateToPage(item.id)}
+              onClick={() => {
+                navigateToPage(item.id);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
               className={`text-sm font-medium transition-colors hover:scale-105 ${
                 currentPage === item.id 
                   ? 'text-blue-600 font-semibold' 

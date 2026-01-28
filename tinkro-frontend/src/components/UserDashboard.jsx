@@ -389,23 +389,95 @@ const OverviewTab = ({ userData, setActiveTab }) => {
   );
 };
 
-// Orders Tab Component  
-const OrdersTab = ({ setCurrentPage }) => (
-  <div>
-    <h2 className="text-2xl font-bold mb-6 text-gray-800">My Orders</h2>
-    <div className="text-center py-12">
-      <Package size={48} className="text-gray-400 mx-auto mb-4" />
-      <h3 className="text-lg font-semibold text-gray-600 mb-2">No Orders Yet</h3>
-      <p className="text-gray-500 mb-6">Start shopping to see your orders here!</p>
-      <button 
-        onClick={() => setCurrentPage('products')} 
-        className="bg-gradient-to-r from-orange-500 to-blue-500 text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg transition-shadow"
-      >
-        Browse Products
-      </button>
+// Orders Tab Component (fetches and displays user orders)
+const OrdersTab = ({ setCurrentPage }) => {
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const userData = JSON.parse(localStorage.getItem('tinkro_current_user') || '{}');
+
+  useEffect(() => {
+    // Try to load orders from localStorage (or OrderManager if available)
+    let allOrders = [];
+    try {
+      // If you have an OrderManager service, use it here instead
+      allOrders = JSON.parse(localStorage.getItem('tinkro_orders') || '[]');
+    } catch (e) {
+      allOrders = [];
+    }
+    // Debug: Log all orders and user email
+    console.log('[OrdersTab] All Orders:', allOrders);
+    console.log('[OrdersTab] Current user email:', userData.email);
+    console.log('[OrdersTab] All order emails:', allOrders.map(o => o.email));
+    // Filter orders by current user's email
+    const filtered = allOrders.filter(
+      (order) => order.email && userData.email && order.email === userData.email
+    );
+    console.log('[OrdersTab] Filtered Orders:', filtered);
+    setOrders(filtered);
+    setLoading(false);
+  }, [userData.email]);
+
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+        <p className="text-gray-600 mt-4">Loading orders...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <h2 className="text-2xl font-bold mb-6 text-gray-800">My Orders</h2>
+      {orders.length === 0 ? (
+        <div className="text-center py-12">
+          <Package size={48} className="text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-600 mb-2">No Orders Yet</h3>
+          <p className="text-gray-500 mb-6">Start shopping to see your orders here!</p>
+          <button 
+            onClick={() => setCurrentPage('products')} 
+            className="bg-gradient-to-r from-orange-500 to-blue-500 text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg transition-shadow"
+          >
+            Browse Products
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {orders.map((order) => (
+            <div key={order.id || order.orderId} className="border border-gray-200 rounded-lg p-6 shadow-sm bg-white">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Package size={20} className="text-blue-500" />
+                  <span className="font-bold text-gray-800">Order #{order.orderId || order.id}</span>
+                </div>
+                <span className={`text-xs font-semibold px-3 py-1 rounded-full ${order.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{order.status || 'pending'}</span>
+              </div>
+              <div className="text-gray-700 mb-2">
+                <span className="font-medium">Placed on:</span> {order.date ? new Date(order.date).toLocaleString() : 'N/A'}
+              </div>
+              <div className="mb-2">
+                <span className="font-medium">Total:</span> ₹{order.total || order.amount || 0}
+              </div>
+              {order.items && Array.isArray(order.items) && order.items.length > 0 && (
+                <div className="mb-2">
+                  <span className="font-medium">Items:</span>
+                  <ul className="list-disc ml-6 text-gray-600">
+                    {order.items.map((item, idx) => (
+                      <li key={idx}>{item.name} x {item.quantity || 1}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {order.paymentId && (
+                <div className="text-xs text-gray-500 mt-2">Payment ID: {order.paymentId}</div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
-  </div>
-);
+  );
+};
 
 // Wishlist Tab Component
 const WishlistTab = ({ userData, onWishlistUpdate, setCurrentPage }) => {
