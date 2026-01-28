@@ -1,27 +1,80 @@
-import React from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+// --- MarqueeSlider: Continuous smooth scrolling image carousel ---
+function MarqueeSlider() {
+  const images = [
+    '/unleash.jpeg',
+    '/unleash2.jpeg',
+    '/unleash3.jpeg',
+    '/unleash4.jpeg',
+  ];
+  // Repeat images for seamless loop
+  const allImages = [...images, ...images];
+  return (
+    <div className="marquee-slider">
+      <div className="marquee-track">
+        {allImages.map((src, i) => (
+          <img
+            src={src}
+            alt={`Unleash ${i % images.length + 1}`}
+            className="marquee-img"
+            key={i}
+            draggable={false}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+import ATLParticles from '../components/ATLParticles';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Rocket, Users, Award, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function Home({ setCurrentPage }) {
+      // Scroll to top when Home mounts
+      useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, []);
+    const [showLearnMore, setShowLearnMore] = useState(false);
   const features = [
     {
       icon: Rocket,
       title: 'Innovative Learning',
       description: 'Hands-on robotics kits designed to spark creativity and innovation.',
+      bg: 'from-blue-100 to-blue-50',
+      heading: 'text-blue-600',
+      border: 'bg-gradient-to-r from-blue-500 to-blue-400',
+      iconBg: 'from-blue-500 to-blue-400',
     },
     {
       icon: Users,
       title: 'For Schools & Students',
       description: 'Perfect for individual learners and bulk orders for educational institutions.',
+      bg: 'from-pink-100 to-pink-50',
+      heading: 'text-pink-600',
+      border: 'bg-gradient-to-r from-pink-500 to-pink-400',
+      iconBg: 'from-pink-500 to-pink-400',
     },
     {
       icon: Award,
-      title: 'Quality Assured',
-      description: 'Premium components and comprehensive learning materials included.',
+      title: 'ATL Lab Setup & Services',
+      description: 'We provide complete setup, training, and support for ATL (Atal Tinkering Lab) and modern STEM/Robotics labs in schools. Send your enquiry to get all the details and guidance for your institution!',
+      bg: 'from-orange-100 to-orange-50',
+      heading: 'text-orange-600',
+      border: 'bg-gradient-to-r from-orange-500 to-orange-400',
+      iconBg: 'from-orange-500 to-orange-400',
     },
   ];
+
+  // Auto-hover/spotlight state for features
+  const [activeFeature, setActiveFeature] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveFeature((prev) => (prev + 1) % features.length);
+    }, 2200);
+    return () => clearInterval(interval);
+  }, [features.length]);
 
   return (
     <>
@@ -98,58 +151,207 @@ export default function Home({ setCurrentPage }) {
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="bg-gray-50/50 p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all hover:-translate-y-2 border border-gray-100"
-              >
-                <div className="w-16 h-16 bg-gradient-to-br from-tinkro-blue to-tinkro-orange rounded-xl flex items-center justify-center mb-6">
-                  <feature.icon className="h-8 w-8 text-white" />
-                </div>
-                <h3 className="text-xl font-bold mb-3 text-tinkro-blue">{feature.title}</h3>
-                <p className="text-gray-600">{feature.description}</p>
-              </motion.div>
-            ))}
+            {features.map((feature, index) => {
+              const isActive = activeFeature === index;
+              return (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 40, scale: 0.95 }}
+                  whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.2 + index * 0.15, duration: 0.7, type: 'spring', bounce: 0.35 }}
+                  animate={
+                    feature.title === 'ATL Lab Setup & Services'
+                      ? isActive
+                        ? { scale: 1.08, rotate: -1, boxShadow: '0 8px 32px 0 rgba(255, 152, 0, 0.18)' }
+                        : { scale: 1, rotate: 0, boxShadow: '0 2px 8px 0 rgba(255,152,0,0.08)' }
+                      : isActive
+                        ? { scale: 1.06, boxShadow: '0 8px 32px 0 rgba(80, 120, 255, 0.15)' }
+                        : { scale: 1, boxShadow: '0 2px 8px 0 rgba(80,120,255,0.06)' }
+                  }
+                  whileHover={
+                    feature.title === 'ATL Lab Setup & Services'
+                      ? { scale: 1.12, rotate: -2, boxShadow: '0 12px 40px 0 rgba(255, 152, 0, 0.22)' }
+                      : { scale: 1.06, boxShadow: '0 8px 32px 0 rgba(80, 120, 255, 0.15)' }
+                  }
+                  className={`relative p-8 rounded-2xl shadow-lg border border-gray-100 group overflow-hidden transition-all ${isActive ? 'ring-2 ring-tinkro-blue/30' : ''} bg-gradient-to-br ${feature.bg} ${feature.title === 'ATL Lab Setup & Services' ? 'atl-animated-card' : ''}`}
+                  style={{ cursor: 'pointer', zIndex: feature.title === 'ATL Lab Setup & Services' ? 10 : 'auto' }}
+                >
+                  {/* Animated SVG wave background and particles for ATL card */}
+                  {feature.title === 'ATL Lab Setup & Services' && (
+                    <>
+                      <span className="atl-glow-border"></span>
+                      <div className="absolute inset-0 z-0 pointer-events-none">
+                        <svg width="100%" height="100%" viewBox="0 0 400 180" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute left-0 top-0 w-full h-full">
+                          <path d="M0 120 Q100 180 200 120 T400 120 V180 H0Z" fill="#fffbe6" opacity="0.35">
+                            <animate attributeName="d" dur="6s" repeatCount="indefinite"
+                              values="M0 120 Q100 180 200 120 T400 120 V180 H0Z;M0 130 Q100 110 200 140 T400 130 V180 H0Z;M0 120 Q100 180 200 120 T400 120 V180 H0Z" />
+                          </path>
+                        </svg>
+                        <ATLParticles />
+                      </div>
+                    </>
+                  )}
+                  {/* Animated glowing border for ATL card */}
+                  {feature.title === 'ATL Lab Setup & Services' && (
+                    <span className="atl-glow-border"></span>
+                  )}
+                  {/* Animated gradient border */}
+                  <div className={`absolute inset-0 rounded-2xl pointer-events-none z-0 transition-opacity duration-300 ${isActive ? 'opacity-100' : 'opacity-0'} group-hover:opacity-100`} style={{background: 'linear-gradient(120deg, #3b82f6 0%, #f59e42 100%)', filter: 'blur(12px)', opacity: 0.18}}></div>
+                  {/* Icon with pop effect */}
+                  <motion.div
+                    className={`w-16 h-16 bg-gradient-to-br ${feature.iconBg} rounded-xl flex items-center justify-center mb-6 relative z-10 shadow-md ${feature.title === 'ATL Lab Setup & Services' ? 'atl-float-icon' : ''}`}
+                    animate={
+                      feature.title === 'ATL Lab Setup & Services'
+                        ? { y: [0, -8, 0, 8, 0], scale: isActive ? 1.22 : 1, rotate: isActive ? -10 : 0 }
+                        : isActive ? { scale: 1.18, rotate: -8 } : { scale: 1, rotate: 0 }
+                    }
+                    transition={
+                      feature.title === 'ATL Lab Setup & Services'
+                        ? { duration: 3, repeat: Infinity, ease: 'easeInOut' }
+                        : { type: 'spring', stiffness: 300 }
+                    }
+                  >
+                    <feature.icon className="h-8 w-8 text-white drop-shadow-lg" />
+                  </motion.div>
+                  <h3 className={`text-xl font-bold mb-3 relative z-10 transition-colors duration-300 ${feature.heading} ${isActive ? '!text-black' : ''} group-hover:text-black`}>{feature.title}</h3>
+                  <p className={`text-gray-600 relative z-10 ${feature.title === 'ATL Lab Setup & Services' ? 'font-medium text-base md:text-lg atl-animated-bg' : ''}`}>{feature.description}</p>
+                  {/* Enquiry Here link for ATL Lab Setup & Services with animation and highlight */}
+                  {feature.title === 'ATL Lab Setup & Services' && (
+                    <motion.div
+                      className="relative z-10 mt-4 flex items-center gap-2"
+                      initial={{ opacity: 0, y: 10 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.2 }}
+                    >
+                      <motion.button
+                        whileHover={{ scale: 1.13 }}
+                        whileTap={{ scale: 0.97 }}
+                        className="atl-enquiry-btn px-5 py-2 rounded-full font-semibold shadow-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
+                        style={{ fontWeight: 600, letterSpacing: '0.02em', position: 'relative', overflow: 'hidden' }}
+                        onClick={() => setCurrentPage && setCurrentPage('contact')}
+                      >
+                        <span className="atl-btn-shimmer"></span>
+                        <span className="relative z-10 inline-block align-middle">Enquiry Here</span>
+                        <span className="relative z-10 inline-block ml-1 animate-bounce">→</span>
+                      </motion.button>
+                      <span className="text-xs text-orange-500 font-medium animate-fade-in">Quick Response!</span>
+                    </motion.div>
+                  )}
+                  {/* Gradient bottom border */}
+                  <div className={`absolute left-0 right-0 bottom-0 h-2 rounded-b-2xl ${feature.border}`}></div>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
 
       {/* Call to Action Section */}
-      <section className="py-20 bg-tinkro-light-blue">
-        <div className="container mx-auto px-4">
-           <div className="grid md:grid-cols-2 gap-12 items-center">
-              <motion.div
-                initial={{ opacity: 0, x: -30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                className="relative"
+      <section className="py-10 bg-tinkro-light-blue">
+        <div className="container mx-auto px-2 md:px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center rounded-3xl bg-white/60 p-2 md:p-6" style={{boxShadow:'0 4px 32px 0 rgba(25,118,210,0.06)'}}>
+            {/* Left Marquee */}
+            <div className="hidden md:flex flex-col gap-4 h-full justify-center">
+              <MarqueeSlider direction="left" />
+            </div>
+            {/* Center Text */}
+            <div className="flex flex-col items-center justify-center text-center py-8 px-2 md:px-8">
+              <h2 className="text-3xl md:text-5xl font-bold mb-4 text-tinkro-blue">Unleash Your Child's <span className="text-tinkro-orange">Creativity</span></h2>
+              <p className="text-gray-600 text-base md:text-lg mb-6 max-w-xl">
+                Our STEM-focused robotic kits make learning fun! We provide everything needed to build, code, and innovate, turning complex ideas into exciting, hands-on projects. Perfect for sparking a lifelong passion for technology.
+              </p>
+              <Button
+                size="lg"
+                className="bg-tinkro-orange text-white hover:bg-orange-600"
+                onClick={() => setShowLearnMore((v) => !v)}
               >
-                  <img alt="Unleash Your Child's Creativity with Tinkro" className="responsive-img" src="https://images.unsplash.com/photo-1651421433361-2c45e7f3e801" />
-              </motion.div>
-               <motion.div
-                initial={{ opacity: 0, x: 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-              >
-                <h2 className="text-3xl md:text-4xl font-bold mb-6 text-tinkro-blue">Unleash Your Child's <span className="text-tinkro-orange">Creativity</span></h2>
-                <p className="text-gray-600 text-lg mb-6">
-                  Our STEM-focused robotic kits make learning fun! We provide everything needed to build, code, and innovate, turning complex ideas into exciting, hands-on projects. Perfect for sparking a lifelong passion for technology.
-                </p>
-                 <Button
-                  size="lg"
-                  className="bg-tinkro-orange text-white hover:bg-orange-600"
-                  onClick={() => setCurrentPage('about')}
-                >
-                  Learn More
-                </Button>
-              </motion.div>
-           </div>
+                Learn More {showLearnMore ? <span>&#9650;</span> : <span>&#9660;</span>}
+              </Button>
+              {/* --- Learn More Content Section (collapsible) --- */}
+              {showLearnMore && (
+                <div className="mt-10 flex flex-col gap-8">
+                  {/* Card 1: What's Included */}
+                  <div className="bg-white rounded-xl shadow-md p-6 md:p-8 max-w-3xl mx-auto">
+                    <h3 className="text-xl md:text-2xl font-bold text-tinkro-blue mb-4 flex items-center gap-2">
+                      <span role="img" aria-label="included">🛠️</span> What's Included in Every Kit
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm md:text-base">
+                      <div>
+                        <div className="font-semibold text-tinkro-blue">High-Quality Components</div>
+                        <div className="text-gray-700">Motors, sensors, microcontrollers, and all necessary parts</div>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-tinkro-blue">Step-by-Step Guide</div>
+                        <div className="text-gray-700">Easy-to-follow instructions with images and videos</div>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-tinkro-blue">Coding Software</div>
+                        <div className="text-gray-700">Block-based and text-based programming options</div>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-tinkro-blue">Project Ideas</div>
+                        <div className="text-gray-700">10+ exciting projects to build and customize</div>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Card 2: Skills */}
+                  <div className="bg-[#f8fafc] rounded-xl shadow-md p-6 md:p-8 max-w-3xl mx-auto">
+                    <h3 className="text-xl md:text-2xl font-bold text-tinkro-blue mb-4 flex items-center gap-2">
+                      <span role="img" aria-label="skills">🧑‍💻</span> Skills Your Child Will Develop
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm md:text-base">
+                      <div className="bg-white rounded-lg p-4 flex flex-col gap-2 shadow-sm">
+                        <div className="font-semibold text-tinkro-blue flex items-center gap-2"><span>⌨️</span> Programming</div>
+                        <div className="text-gray-700">Learn Python, C++, or block-based coding through hands-on robotics projects</div>
+                      </div>
+                      <div className="bg-white rounded-lg p-4 flex flex-col gap-2 shadow-sm">
+                        <div className="font-semibold text-tinkro-blue flex items-center gap-2"><span>🛠️</span> Engineering</div>
+                        <div className="text-gray-700">Understand mechanics, electronics, and how things work from the inside out</div>
+                      </div>
+                      <div className="bg-white rounded-lg p-4 flex flex-col gap-2 shadow-sm">
+                        <div className="font-semibold text-tinkro-blue flex items-center gap-2"><span>🧠</span> Problem Solving</div>
+                        <div className="text-gray-700">Develop critical thinking and debugging skills through trial and error</div>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Card 3: Ages */}
+                  <div className="bg-white rounded-xl shadow-md p-6 md:p-8 max-w-3xl mx-auto">
+                    <h3 className="text-xl md:text-2xl font-bold text-tinkro-blue mb-4">Perfect for Ages 6-18</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm md:text-base">
+                      <div className="border-l-4 border-green-500 pl-3">
+                        <div className="font-bold text-green-700">Beginner (6-10)</div>
+                        <div className="text-gray-700">Simple snap-together kits with block coding</div>
+                      </div>
+                      <div className="border-l-4 border-blue-500 pl-3">
+                        <div className="font-bold text-blue-700">Intermediate (11-14)</div>
+                        <div className="text-gray-700">Arduino-based projects with sensor integration</div>
+                      </div>
+                      <div className="border-l-4 border-orange-500 pl-3">
+                        <div className="font-bold text-orange-700">Advanced (15-18)</div>
+                        <div className="text-gray-700">AI, IoT, and competition-ready robotics</div>
+                      </div>
+                    </div>
+                    <div className="flex justify-center mt-6">
+                      <button
+                        className="bg-tinkro-blue text-white px-6 py-2 rounded-lg font-semibold shadow hover:bg-blue-700 transition"
+                        onClick={() => setCurrentPage && setCurrentPage('products')}
+                      >
+                        Browse Our Kits &rarr;
+                      </button>
+                    </div>
+                  </div>
+                  </div>
+                )}
+            </div>
+            {/* Right Marquee (mirror or static) */}
+            <div className="hidden md:flex flex-col gap-4 h-full justify-center">
+              <MarqueeSlider direction="left" />
+            </div>
+          </div>
         </div>
       </section>
+
 
       {/* Product Showcase */}
       <section className="py-20 bg-white">
@@ -163,7 +365,12 @@ export default function Home({ setCurrentPage }) {
             <p className="text-lg mb-8 text-gray-600 max-w-3xl mx-auto">
               Discover our range of educational robotics & electronics kits for young innovators. From LED fun kits to advanced competition robots, there's a Tinkro kit for every curious mind.
             </p>
-             <img alt="Tinkro product lineup" className="responsive-img" src="https://images.unsplash.com/photo-1518314916381-77a37c2a49ae" />
+             <img 
+               alt="Tinkro 4WD Car" 
+               className="responsive-img" 
+               src="/4wd car.jpeg" 
+               style={{width: '100%', maxWidth: '100%', height: 'auto', objectFit: 'contain', borderRadius: '16px', margin: '0 auto', display: 'block'}} 
+             />
             <Button
               size="lg"
               className="bg-tinkro-blue text-white hover:bg-blue-800 mt-12"
@@ -177,3 +384,6 @@ export default function Home({ setCurrentPage }) {
     </>
   );
 }
+
+
+
