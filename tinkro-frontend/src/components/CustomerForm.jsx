@@ -1,31 +1,39 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { User, Mail, Phone, MapPin, X, Gift, Tag, Percent } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import PromoCodeService from '../services/PromoCodeService';
 
-const CustomerForm = ({ onSubmit, totalPrice, onCancel }) => {
+const CustomerForm = ({ onSubmit, totalPrice, onCancel, currentUserEmail }) => {
+  const [addresses] = useState([
+    {
+      id: 1,
+      label: 'WORK',
+      name: 'Ravi Tech',
+      address: 'Indore, Indore, Madhya Pradesh - 452010',
+      phone: '9907725429',
+      email: currentUserEmail || 'ravitech@gmail.com',
+    },
+  ]);
+  const [selectedAddress, setSelectedAddress] = useState(addresses[0] || null);
   const [customerData, setCustomerData] = useState({
     name: '',
-    email: '',
+    email: currentUserEmail ? currentUserEmail : '',
     phone: '',
     address: '',
     city: '',
     pincode: '',
   });
-
   const [errors, setErrors] = useState({});
-  
-  // Promo code states
   const [promoCode, setPromoCode] = useState('');
-  const [appliedPromo, setAppliedPromo] = useState(null);
   const [promoError, setPromoError] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState(null);
   const [isApplyingPromo, setIsApplyingPromo] = useState(false);
   const [finalPrice, setFinalPrice] = useState(totalPrice);
 
   const validateForm = () => {
     const newErrors = {};
-    
     if (!customerData.name.trim()) newErrors.name = 'Name is required';
     if (!customerData.email.trim()) newErrors.email = 'Email is required';
     else if (!/\S+@\S+\.\S+/.test(customerData.email)) newErrors.email = 'Invalid email';
@@ -35,58 +43,26 @@ const CustomerForm = ({ onSubmit, totalPrice, onCancel }) => {
     if (!customerData.city.trim()) newErrors.city = 'City is required';
     if (!customerData.pincode.trim()) newErrors.pincode = 'Pincode is required';
     else if (!/^\d{6}$/.test(customerData.pincode)) newErrors.pincode = 'Invalid pincode';
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (validateForm()) {
-      onSubmit(customerData);
-    }
-  };
-
   const handleChange = (field, value) => {
     setCustomerData(prev => ({ ...prev, [field]: value }));
-    
-    // Real-time validation - clear errors when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
-    
-    // Show required field error immediately if field becomes empty
-    if (!value.trim() && field !== '') {
-      const fieldNames = {
-        name: 'Name is required',
-        email: 'Email is required',
-        phone: 'Phone is required',
-        address: 'Address is required',
-        city: 'City is required',
-        pincode: 'Pincode is required'
-      };
-      
-      setTimeout(() => {
-        if (!customerData[field]?.trim()) {
-          setErrors(prev => ({ ...prev, [field]: fieldNames[field] || 'This field is required' }));
-        }
-      }, 1000); // Show error after 1 second of inactivity
-    }
   };
 
-  // Promo code functions
   const applyPromoCode = async () => {
     if (!promoCode.trim()) {
       setPromoError('Please enter a promo code');
       return;
     }
-
     setIsApplyingPromo(true);
     setPromoError('');
-
     try {
       const result = PromoCodeService.applyPromoCode(promoCode.trim(), totalPrice);
-      
       if (result.success) {
         setAppliedPromo(result);
         setFinalPrice(result.finalAmount);
@@ -130,81 +106,105 @@ const CustomerForm = ({ onSubmit, totalPrice, onCancel }) => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="p-6 bg-white rounded-lg shadow-lg max-w-md mx-auto relative z-10 mt-4 mb-4 max-h-[80vh] overflow-y-auto"
-      onClick={(e) => e.stopPropagation()}
+      className="w-screen h-screen min-h-screen flex flex-col p-0 relative z-30 bg-gray-50"
+      style={{ boxShadow: 'none' }}
+      onClick={e => e.stopPropagation()}
     >
-      {/* Header with Close Button */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-2xl font-bold text-center flex-1">Billing Details</h3>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="p-2 hover:bg-gray-100 rounded-full transition-colors ml-2"
-        >
-          <X className="w-5 h-5 text-gray-500" />
-        </button>
-      </div>
-      
-      {/* Required fields message */}
-      <p className="text-sm text-gray-600 text-center mb-6">
-        All fields marked with <span className="text-red-500">*</span> are required
-      </p>
-      
-      <form onSubmit={handleSubmitWithPromo} className="space-y-4">
+      {/* Decorative Top Bar */}
+      <div className="h-2 w-full bg-gradient-to-r from-blue-500 via-purple-400 to-pink-400" />
+      <form onSubmit={handleSubmitWithPromo} className="flex-1 overflow-y-auto w-full" style={{ minHeight: 0 }}>
+        {/* Header with Close Button */}
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-2xl font-bold text-blue-800 tracking-tight flex-1 text-left">Checkout</h3>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="p-2 hover:bg-blue-100 rounded-full transition-colors ml-2"
+            aria-label="Close"
+          >
+            <X className="w-6 h-6 text-blue-400" />
+          </button>
+        </div>
+
+        {/* Saved Addresses Section */}
+        {addresses.length > 0 && (
+          <div className="mb-5">
+            <div className="flex items-center justify-between mb-1">
+              <span className="font-semibold text-base text-blue-700">Saved Address</span>
+              <button
+                type="button"
+                className="text-blue-500 text-xs hover:underline"
+                onClick={() => alert('Add New Address logic here')}
+              >
+                + Add New Address
+              </button>
+            </div>
+            <div
+              className={`border rounded-lg p-3 bg-blue-50 cursor-pointer mb-1 transition-all duration-200 flex flex-col gap-1 ${selectedAddress ? 'border-blue-400 shadow' : 'border-gray-200'}`}
+              onClick={() => setSelectedAddress(addresses[0])}
+              style={{ boxShadow: selectedAddress ? '0 2px 8px rgba(59,130,246,0.08)' : '' }}
+            >
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-base text-gray-800">{addresses[0].name}</span>
+                <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-semibold">{addresses[0].label}</span>
+              </div>
+              <div className="text-gray-700 text-xs">{addresses[0].address}</div>
+              <div className="text-gray-500 text-xs">{addresses[0].phone}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Required fields message */}
+        <p className="text-xs text-gray-500 text-left mb-3">
+          All fields marked with <span className="text-red-500">*</span> are required
+        </p>
+
         {/* Name Field */}
-        <div>
-          {/* OLD: Full Name (without asterisk and required) */}
-          <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
-            <User className="w-4 h-4 mr-2" />
-            {/* OLD: Full Name */}
-            Full Name <span className="text-red-500 ml-1">*</span> {/* NEW: Added red asterisk */}
+        <div className="mb-3">
+          <label className="flex items-center text-xs font-medium text-gray-700 mb-1">
+            <User className="w-4 h-4 mr-1 text-blue-400" />
+            Full Name <span className="text-red-500 ml-1">*</span>
           </label>
           <input
             type="text"
             value={customerData.name}
-            onChange={(e) => handleChange('name', e.target.value)}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 relative z-10 ${
-              errors.name ? 'border-red-500' : 'border-gray-300'
-            }`}
+            onChange={e => handleChange('name', e.target.value)}
+            className={`w-full px-3 py-1.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white text-sm ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
             placeholder="Enter your full name"
             style={{ pointerEvents: 'auto' }}
-            required // NEW: Added required attribute
+            required
           />
           {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
         </div>
 
         {/* Email Field */}
-        <div>
-          <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
-            <Mail className="w-4 h-4 mr-2" />
+        <div className="mb-3">
+          <label className="flex items-center text-xs font-medium text-gray-700 mb-1">
+            <Mail className="w-4 h-4 mr-1 text-blue-400" />
             Email Address <span className="text-red-500 ml-1">*</span>
           </label>
           <input
             type="email"
             value={customerData.email}
-            onChange={(e) => handleChange('email', e.target.value)}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.email ? 'border-red-500' : 'border-gray-300'
-            }`}
+            disabled
+            className="w-full px-3 py-1.5 border rounded-md bg-gray-100 text-gray-500 cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-400 border-gray-300 text-sm"
             placeholder="Enter your email"
             required
           />
-          {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+          <p className="text-xs text-gray-400 mt-1">This is your account email. Orders will be linked to this email.</p>
         </div>
 
         {/* Phone Field */}
-        <div>
-          <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
-            <Phone className="w-4 h-4 mr-2" />
+        <div className="mb-3">
+          <label className="flex items-center text-xs font-medium text-gray-700 mb-1">
+            <Phone className="w-4 h-4 mr-1 text-blue-400" />
             Phone Number <span className="text-red-500 ml-1">*</span>
           </label>
           <input
             type="tel"
             value={customerData.phone}
-            onChange={(e) => handleChange('phone', e.target.value)}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.phone ? 'border-red-500' : 'border-gray-300'
-            }`}
+            onChange={e => handleChange('phone', e.target.value)}
+            className={`w-full px-3 py-1.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white text-sm ${errors.phone ? 'border-red-500' : 'border-gray-300'}`}
             placeholder="Enter your phone number"
             required
           />
@@ -212,17 +212,15 @@ const CustomerForm = ({ onSubmit, totalPrice, onCancel }) => {
         </div>
 
         {/* Address Field */}
-        <div>
-          <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
-            <MapPin className="w-4 h-4 mr-2" />
+        <div className="mb-3">
+          <label className="flex items-center text-xs font-medium text-gray-700 mb-1">
+            <MapPin className="w-4 h-4 mr-1 text-blue-400" />
             Address <span className="text-red-500 ml-1">*</span>
           </label>
           <textarea
             value={customerData.address}
-            onChange={(e) => handleChange('address', e.target.value)}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.address ? 'border-red-500' : 'border-gray-300'
-            }`}
+            onChange={e => handleChange('address', e.target.value)}
+            className={`w-full px-3 py-1.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white text-sm ${errors.address ? 'border-red-500' : 'border-gray-300'}`}
             placeholder="Enter your complete address"
             rows="2"
             required
@@ -231,34 +229,30 @@ const CustomerForm = ({ onSubmit, totalPrice, onCancel }) => {
         </div>
 
         {/* City and Pincode */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-2 mb-3">
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">
+            <label className="text-xs font-medium text-gray-700 mb-1 block">
               City <span className="text-red-500 ml-1">*</span>
             </label>
             <input
               type="text"
               value={customerData.city}
-              onChange={(e) => handleChange('city', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.city ? 'border-red-500' : 'border-gray-300'
-              }`}
+              onChange={e => handleChange('city', e.target.value)}
+              className={`w-full px-3 py-1.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white text-sm ${errors.city ? 'border-red-500' : 'border-gray-300'}`}
               placeholder="City"
               required
             />
             {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city}</p>}
           </div>
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">
+            <label className="text-xs font-medium text-gray-700 mb-1 block">
               Pincode <span className="text-red-500 ml-1">*</span>
             </label>
             <input
               type="text"
               value={customerData.pincode}
-              onChange={(e) => handleChange('pincode', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.pincode ? 'border-red-500' : 'border-gray-300'
-              }`}
+              onChange={e => handleChange('pincode', e.target.value)}
+              className={`w-full px-3 py-1.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white text-sm ${errors.pincode ? 'border-red-500' : 'border-gray-300'}`}
               placeholder="Pincode"
               required
             />
@@ -267,25 +261,24 @@ const CustomerForm = ({ onSubmit, totalPrice, onCancel }) => {
         </div>
 
         {/* Promo Code Section */}
-        <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg mt-6 border border-purple-200">
-          <label className="flex items-center text-sm font-medium text-gray-700 mb-3">
-            <Gift className="w-4 h-4 mr-2 text-purple-600" />
+        <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-3 rounded-lg mt-4 border border-purple-100 shadow-sm">
+          <label className="flex items-center text-xs font-medium text-gray-700 mb-2">
+            <Gift className="w-4 h-4 mr-1 text-purple-500" />
             Have a Promo Code?
           </label>
-          
           {!appliedPromo ? (
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div className="flex gap-2">
                 <div className="flex-1 relative">
-                  <Tag className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <Tag className="w-4 h-4 absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <input
                     type="text"
                     value={promoCode}
-                    onChange={(e) => {
+                    onChange={e => {
                       setPromoCode(e.target.value.toUpperCase());
                       setPromoError('');
                     }}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    className="w-full pl-8 pr-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-400 focus:border-purple-400 bg-white text-sm"
                     placeholder="Enter promo code"
                   />
                 </div>
@@ -293,21 +286,19 @@ const CustomerForm = ({ onSubmit, totalPrice, onCancel }) => {
                   type="button"
                   onClick={applyPromoCode}
                   disabled={isApplyingPromo || !promoCode.trim()}
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed shadow text-xs"
                 >
                   {isApplyingPromo ? 'Applying...' : 'Apply'}
                 </Button>
               </div>
-              
               {promoError && (
                 <p className="text-red-500 text-xs mt-1 flex items-center">
                   <X className="w-3 h-3 mr-1" />
                   {promoError}
                 </p>
               )}
-              
               {/* Available Promo Codes Hint */}
-              <div className="text-xs text-gray-500 bg-white p-2 rounded border-l-4 border-purple-400">
+              <div className="text-xs text-gray-500 bg-white p-1 rounded border-l-4 border-purple-300 mt-1">
                 <p className="font-medium mb-1">💡 Try these codes:</p>
                 <p><span className="font-mono bg-gray-100 px-1 rounded">WELCOME10</span> - 10% off on ₹500+</p>
                 <p><span className="font-mono bg-gray-100 px-1 rounded">SAVE50</span> - ₹50 off on ₹300+</p>
@@ -338,33 +329,28 @@ const CustomerForm = ({ onSubmit, totalPrice, onCancel }) => {
         </div>
 
         {/* Order Summary */}
-        <div className="bg-gray-50 p-4 rounded-md mt-6">
-          <h4 className="font-semibold text-gray-800 mb-3">Order Summary</h4>
-          
-          <div className="space-y-2 text-sm">
+        <div className="bg-gray-50 p-3 rounded-lg mt-4 shadow-sm border border-gray-100">
+          <h4 className="font-semibold text-blue-700 mb-2 text-base">Order Summary</h4>
+          <div className="space-y-1 text-xs">
             <div className="flex justify-between">
               <span>Subtotal:</span>
               <span>₹{totalPrice}</span>
             </div>
-            
             {appliedPromo && (
               <div className="flex justify-between text-green-600">
                 <span>Discount ({appliedPromo.promoCode.code}):</span>
                 <span>-₹{appliedPromo.discount}</span>
               </div>
             )}
-            
             <hr className="my-2" />
-            
-            <div className="flex justify-between text-lg font-bold">
+            <div className="flex justify-between text-base font-bold">
               <span>Total Amount:</span>
               <span className={appliedPromo ? 'text-green-600' : 'text-blue-600'}>
                 ₹{finalPrice}
               </span>
             </div>
-            
             {appliedPromo && (
-              <p className="text-xs text-green-600 text-center mt-2">
+              <p className="text-xs text-green-600 text-center mt-1">
                 💰 You saved ₹{appliedPromo.discount} with {appliedPromo.promoCode.code}!
               </p>
             )}
@@ -373,8 +359,8 @@ const CustomerForm = ({ onSubmit, totalPrice, onCancel }) => {
 
         {/* Validation Summary */}
         {Object.keys(errors).length > 0 && (
-          <div className="bg-red-50 border border-red-200 rounded-md p-3">
-            <p className="text-red-600 text-sm font-medium mb-1">
+          <div className="bg-red-50 border border-red-200 rounded-md p-2 mt-2">
+            <p className="text-red-600 text-xs font-medium mb-1">
               ⚠️ Please fix the following errors:
             </p>
             <ul className="text-red-600 text-xs space-y-1">
@@ -388,16 +374,14 @@ const CustomerForm = ({ onSubmit, totalPrice, onCancel }) => {
         {/* Submit Button */}
         <Button
           type="submit"
-          className={`w-full py-3 mt-6 cursor-pointer relative z-10 transition-all duration-300 ${
-            Object.keys(errors).length === 0 
-              ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-              : 'bg-gray-400 hover:bg-gray-500 text-white opacity-75'
-          }`}
+          className={`w-full py-2 mt-6 cursor-pointer relative z-10 transition-all duration-300 text-base font-semibold rounded-lg shadow-md ${Object.keys(errors).length === 0 ? 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white' : 'bg-gray-400 hover:bg-gray-500 text-white opacity-75'}`}
           style={{ pointerEvents: 'auto' }}
         >
-          Proceed to Payment ₹{totalPrice}
+          Proceed to Payment ₹{finalPrice}
         </Button>
       </form>
+      {/* Decorative Bottom Bar - subtle, no radius */}
+      <div className="h-2 w-full bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400" />
     </motion.div>
   );
 };

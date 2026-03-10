@@ -408,9 +408,9 @@ const OrdersTab = ({ setCurrentPage }) => {
     console.log('[OrdersTab] All Orders:', allOrders);
     console.log('[OrdersTab] Current user email:', userData.email);
     console.log('[OrdersTab] All order emails:', allOrders.map(o => o.email));
-    // Filter orders by current user's email
+    // Filter orders by current user's email (fix: use order.customer.email)
     const filtered = allOrders.filter(
-      (order) => order.email && userData.email && order.email === userData.email
+      (order) => order.customer?.email && userData.email && order.customer.email === userData.email
     );
     console.log('[OrdersTab] Filtered Orders:', filtered);
     setOrders(filtered);
@@ -445,32 +445,47 @@ const OrdersTab = ({ setCurrentPage }) => {
         <div className="space-y-6">
           {orders.map((order) => (
             <div key={order.id || order.orderId} className="border border-gray-200 rounded-lg p-6 shadow-sm bg-white">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2 gap-2">
                 <div className="flex items-center gap-2">
                   <Package size={20} className="text-blue-500" />
                   <span className="font-bold text-gray-800">Order #{order.orderId || order.id}</span>
                 </div>
-                <span className={`text-xs font-semibold px-3 py-1 rounded-full ${order.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{order.status || 'pending'}</span>
+                <span className={`text-xs font-semibold px-3 py-1 rounded-full ${order.status === 'confirmed' || order.paymentStatus === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{order.status === 'confirmed' || order.paymentStatus === 'completed' ? 'Confirmed' : 'Pending'}</span>
               </div>
-              <div className="text-gray-700 mb-2">
-                <span className="font-medium">Placed on:</span> {order.date ? new Date(order.date).toLocaleString() : 'N/A'}
-              </div>
-              <div className="mb-2">
-                <span className="font-medium">Total:</span> ₹{order.total || order.amount || 0}
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2 gap-2">
+                <div className="text-gray-700">
+                  <span className="font-medium">Placed on:</span> {order.createdAt ? new Date(order.createdAt).toLocaleString() : 'N/A'}
+                </div>
+                <div className="font-medium text-lg text-gray-900">
+                  Total: <span className="font-bold text-blue-700">₹{order.totalAmount?.toLocaleString() || 0}</span>
+                </div>
               </div>
               {order.items && Array.isArray(order.items) && order.items.length > 0 && (
                 <div className="mb-2">
                   <span className="font-medium">Items:</span>
-                  <ul className="list-disc ml-6 text-gray-600">
+                  <ul className="ml-0 md:ml-6 text-gray-600">
                     {order.items.map((item, idx) => (
-                      <li key={idx}>{item.name} x {item.quantity || 1}</li>
+                      <li key={idx} className="flex items-center gap-3 py-2 border-b last:border-b-0">
+                        {/* Product image if available */}
+                        {item.image && (
+                          <img src={item.image} alt={item.name} className="w-12 h-12 object-contain rounded border" />
+                        )}
+                        <span className="font-semibold text-gray-800">{item.name}</span>
+                        <span className="text-xs text-gray-500">x {item.quantity || 1}</span>
+                        {item.price && (
+                          <span className="ml-auto font-medium text-blue-700">₹{item.price?.toLocaleString()}</span>
+                        )}
+                      </li>
                     ))}
                   </ul>
                 </div>
               )}
-              {order.paymentId && (
-                <div className="text-xs text-gray-500 mt-2">Payment ID: {order.paymentId}</div>
-              )}
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mt-2">
+                {order.paymentId && (
+                  <div className="text-xs text-gray-500">Payment ID: {order.paymentId}</div>
+                )}
+                <div className="text-xs text-gray-500">Order ID: {order.orderId}</div>
+              </div>
             </div>
           ))}
         </div>

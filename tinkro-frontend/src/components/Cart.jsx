@@ -6,6 +6,7 @@ import { toast } from '@/components/ui/use-toast';
 import CustomerForm from './CustomerForm';
 import EmailService from '../services/EmailService';
 import OrderManager from '../services/OrderManager';
+import FirebaseOrderService from '../services/FirebaseOrderService';
 
 // Added currentUserEmail prop for generic fix
 const Cart = ({ isOpen, setIsOpen, cartItems, updateQuantity, removeItem, totalPrice, currentUserEmail }) => {
@@ -60,8 +61,19 @@ const Cart = ({ isOpen, setIsOpen, cartItems, updateQuantity, removeItem, totalP
       discount,
       appliedPromo
     };
+
+    // Create order in localStorage and Firestore
     const order = OrderManager.createOrder(orderData, cartItems, finalAmount);
     setCurrentOrder(order);
+    try {
+      await FirebaseOrderService.createOrder({
+        ...order,
+        createdAt: new Date().toISOString(),
+      });
+      console.log('Order saved to Firebase');
+    } catch (err) {
+      console.error('Failed to save order to Firebase:', err);
+    }
 
     // If promo code was used, mark it as used
     if (appliedPromo) {
@@ -92,7 +104,25 @@ const Cart = ({ isOpen, setIsOpen, cartItems, updateQuantity, removeItem, totalP
         
         try {
           // Update order with payment details
+
+          // Update local order
           OrderManager.updateOrderPayment(order.orderId, response);
+
+          // Update order in Firebase (mark as paid)
+          (async () => {
+            try {
+              await FirebaseOrderService.createOrder({
+                ...order,
+                paymentId: response.razorpay_payment_id,
+                paymentStatus: 'completed',
+                status: 'confirmed',
+                updatedAt: new Date().toISOString(),
+              });
+              console.log('Order payment updated in Firebase');
+            } catch (err) {
+              console.error('Failed to update order in Firebase:', err);
+            }
+          })();
           
           // Show success message
           const successMessage = appliedPromo 
@@ -364,6 +394,7 @@ const Cart = ({ isOpen, setIsOpen, cartItems, updateQuantity, removeItem, totalP
                 onSubmit={handleCustomerFormSubmit}
                 totalPrice={totalPrice}
                 onCancel={() => setShowCustomerForm(false)}
+                currentUserEmail={currentUserEmail}
               />
             </motion.div>
           </motion.div>

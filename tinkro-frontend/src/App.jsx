@@ -1,15 +1,14 @@
 // OLD: import React, { useState } from 'react';
-import React, { useState, useEffect } from 'react'; // NEW: Added useEffect for localStorage sync
+import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Home from '@/pages/Home';
 import Products from '@/pages/Products';
 import About from '@/pages/About';
 import Blog from '@/pages/Blog';
 import Contact from '@/pages/Contact';
-// NEW: Added Admin Dashboard import
 import AdminDashboard from '@/pages/AdminDashboard';
-// NEW: Added Authentication pages
 import AuthPage from './pages/AuthPage';
 import UserProfile from './pages/UserProfile_Fixed';
 import UserDashboard from '@/components/UserDashboard';
@@ -17,18 +16,11 @@ import Cart from '@/components/Cart';
 import Footer from '@/components/Footer';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as SonnerToaster } from 'sonner';
-import ChatBot from './chatbot/ChatBot'; // NEW: Importing ChatBot component
+import ChatBot from './chatbot/ChatBot';
+import ProductDetails from '@/pages/ProductDetails';
+import Checkout from '@/pages/Checkout';
 
 function App() {
-  // Check URL hash for page navigation including auth routes
-  const [currentPage, setCurrentPage] = useState(() => {
-    const hash = window.location.hash.replace('#', '');
-    const validPages = ['admin', 'auth', 'profile', 'user-dashboard', 'products', 'about', 'blog', 'contact'];
-    return validPages.includes(hash) ? hash : 'home';
-  });
-  
-  // OLD: const [cartItems, setCartItems] = useState([]);
-  // NEW: Load cart from localStorage on app startup
   const [cartItems, setCartItems] = useState(() => {
     try {
       const savedCart = localStorage.getItem('tinkro-cart-items');
@@ -38,7 +30,6 @@ function App() {
       return [];
     }
   });
-  
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [user, setUser] = useState(() => {
     try {
@@ -48,8 +39,6 @@ function App() {
       return null;
     }
   });
-
-  // Function to refresh user data
   const refreshAppUser = () => {
     try {
       const savedUser = localStorage.getItem('tinkro_current_user');
@@ -72,61 +61,18 @@ function App() {
     }
   }, [cartItems]); // Runs whenever cartItems state changes
 
-  // Listen for URL hash changes for navigation
-  useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '');
-      const validPages = ['admin', 'auth', 'profile', 'user-dashboard', 'products', 'about', 'blog', 'contact'];
-      if (validPages.includes(hash)) {
-        setCurrentPage(hash);
-      } else {
-        setCurrentPage('home');
-      }
-    };
 
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
-
-  // Secret keyboard shortcut to access admin panel (Ctrl+Shift+A)
+  // Add global keyboard shortcut: Ctrl+Shift+A to open /admin
   useEffect(() => {
-    const handleKeyPress = (e) => {
-      // Check for Ctrl+Shift+A (or Cmd+Shift+A on Mac)
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'A') {
+    const handleShortcut = (e) => {
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'a') {
         e.preventDefault();
-        console.log('🔐 Secret admin access activated');
-        navigateToPage('admin');
+        window.location.pathname = '/admin';
       }
     };
-
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
+    window.addEventListener('keydown', handleShortcut);
+    return () => window.removeEventListener('keydown', handleShortcut);
   }, []);
-
-  // Enhanced setCurrentPage to also update URL hash
-  const navigateToPage = (page) => {
-    setCurrentPage(page);
-    if (page !== 'home') {
-      window.location.hash = page;
-    } else {
-      window.location.hash = '';
-    }
-  };
-
-  // OPTIMIZED: Auto scroll to top when page changes
-  useEffect(() => {
-    // Immediate scroll with requestAnimationFrame for better performance
-    const performScroll = () => {
-      requestAnimationFrame(() => {
-        window.scrollTo({ 
-          top: 0, 
-          behavior: 'smooth' 
-        });
-      });
-    };
-    
-    performScroll();
-  }, [currentPage]);
 
   const addToCart = (product) => {
     setCartItems(prev => {
@@ -162,43 +108,7 @@ function App() {
     return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
   };
 
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'home':
-        return <Home setCurrentPage={navigateToPage} />;
-      case 'products':
-        return <Products addToCart={addToCart} setCurrentPage={navigateToPage} />;
-      case 'about':
-        return <About setCurrentPage={navigateToPage} />;
-      case 'blog':
-        return <Blog />;
-      case 'contact':
-        return <Contact />;
-      case 'auth':
-        return <AuthPage onAuthSuccess={(userData) => {
-          // Set user and redirect to dashboard
-          setUser(userData);
-          navigateToPage('user-dashboard');
-        }} />;
-      case 'user-dashboard':
-        return user ? <UserDashboard 
-          user={user} 
-          onLogout={() => {
-            setUser(null);
-            navigateToPage('home');
-          }} 
-          setCurrentPage={navigateToPage}
-          onUserUpdate={refreshAppUser}
-        /> : <AuthPage onAuthSuccess={(userData) => {
-          setUser(userData);
-          navigateToPage('user-dashboard');
-        }} />;
-      case 'profile':
-        return <UserProfile />;
-      default:
-        return <Home setCurrentPage={setCurrentPage} />;
-    }
-  };
+  // Routing is now handled by react-router-dom
 
   // Get dynamic page title
   const getPageTitle = () => {
@@ -248,58 +158,37 @@ function App() {
     }
   };
 
-  // Full-screen pages without main website layout
-  if (currentPage === 'admin') {
-    return (
-      <>
-        <Helmet>
-          <title>{getPageTitle()}</title>
-          <meta name="description" content={getPageDescription()} />
-          <meta name="robots" content="noindex, nofollow" />
-        </Helmet>
-        <AdminDashboard />
-        <Toaster />
-      </>
-    );
-  }
-
-  // Authentication and Profile pages are also full-screen
-  if (currentPage === 'auth' || currentPage === 'profile') {
-    return (
-      <>
-        <Helmet>
-          <title>{getPageTitle()}</title>
-          <meta name="description" content={getPageDescription()} />
-          {currentPage === 'auth' && <meta name="robots" content="index, follow" />}
-          {currentPage === 'profile' && <meta name="robots" content="noindex, nofollow" />}
-        </Helmet>
-        {renderPage()}
-        <Toaster />
-      </>
-    );
-  }
-
   return (
-    <>
+    <Router>
       <Helmet>
-        <title>{getPageTitle()}</title>
-        <meta name="description" content={getPageDescription()} />
+        <title>Tinkro - Robotics Kits for Students | Learn, Build, Innovate</title>
+        <meta name="description" content="Discover innovative robotics kits for students. Make learning fun with our educational STEM projects and programming kits." />
         <meta name="robots" content="index, follow" />
-        <link rel="canonical" href={`https://tinkro.com/${currentPage === 'home' ? '' : currentPage}`} />
       </Helmet>
       <div className="min-h-screen flex flex-col bg-white">
         <Header 
-          currentPage={currentPage} 
-          navigateToPage={navigateToPage}
           cartItemsCount={cartItems.length}
           setIsCartOpen={setIsCartOpen}
           user={user}
         />
         <main className="flex-grow">
-          {renderPage()}
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/products" element={<Products addToCart={addToCart} />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/auth" element={<AuthPage onAuthSuccess={(userData) => { setUser(userData); }} />} />
+            <Route path="/profile" element={<UserProfile />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/user-dashboard" element={user ? <UserDashboard user={user} onLogout={() => setUser(null)} onUserUpdate={refreshAppUser} /> : <AuthPage onAuthSuccess={(userData) => setUser(userData)} />} />
+            <Route path="/product/:productId" element={<ProductDetails />} />
+            <Route path="/checkout/:productId" element={<Checkout />} />
+            <Route path="*" element={<Home />} />
+          </Routes>
         </main>
-        <ChatBot /> {/* NEW: ChatBot component added here */}
-        <Footer navigateToPage={navigateToPage} />
+        <ChatBot />
+        <Footer />
         <Cart
           isOpen={isCartOpen}
           setIsOpen={setIsCartOpen}
@@ -307,12 +196,12 @@ function App() {
           updateQuantity={updateCartQuantity}
           removeItem={removeFromCart}
           totalPrice={getTotalPrice()}
+          currentUserEmail={user && user.email ? user.email : ''}
         />
-        {/* ...existing code... */}
         <Toaster />
         <SonnerToaster position="top-right" />
       </div>
-    </>
+    </Router>
   );
 }
 

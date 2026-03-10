@@ -8,7 +8,7 @@ const Footer = ({ navigateToPage }) => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <div className="mb-4">
-               <img src="https://horizons-cdn.hostinger.com/e7c9821b-6b7a-44e2-b895-23441ddb63a1/d68cad29faeccc76733f807b9ad82502.png" alt="Tinkro Logo" className="h-10 w-auto" />
+               <img src="/images/tinkro-logo.png" alt="Tinkro Logo" className="h-10 w-auto" onError={e => { e.target.onerror = null; e.target.src = '/favicon.ico'; }} />
             </div>
             <p className="text-gray-300 text-sm">
               Making robotics fun and easy for students. Build, learn, and innovate with Tinkro!

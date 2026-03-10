@@ -409,7 +409,7 @@ const Products = ({ addToCart, setCurrentPage: navigateToPage }) => {
                         </p>
                         
                         {/* Price and Actions */}
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between gap-2">
                           <div className="text-2xl font-bold text-blue-600">
                             ₹{product.price?.toLocaleString() || 0}
                           </div>
@@ -420,6 +420,17 @@ const Products = ({ addToCart, setCurrentPage: navigateToPage }) => {
                           >
                             <ShoppingCart className="w-4 h-4" />
                             Add to Cart
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              // Direct checkout: create a cart with only this product and go to checkout page
+                              localStorage.setItem('tinkro_buy_now', JSON.stringify([product]));
+                              if (navigateToPage) navigateToPage('checkout', { buyNow: true });
+                            }}
+                            disabled={product.stock === 0}
+                            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors duration-200 flex items-center gap-2"
+                          >
+                            Buy Now
                           </Button>
                         </div>
                       </div>
