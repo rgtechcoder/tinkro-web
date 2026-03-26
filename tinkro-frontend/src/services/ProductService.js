@@ -7,7 +7,7 @@
 import firestoreService from './FirestoreService.js';
 
 class ProductService {
-  static STORAGE_KEY = 'tinkro_products';
+  static STORAGE_KEY = 'tinkro_products'; // Only used for minimal caching now
 
   // Default products for initialization
   static getDefaultProducts() {
@@ -102,16 +102,13 @@ class ProductService {
   // Sync default products to Firebase (one-time setup)
   static async syncDefaultsToFirebase(products) {
     if (!firestoreService.isAvailable()) return;
-    
     try {
       console.log('🔄 ProductService: Syncing', products.length, 'default products to Firebase...');
-      
       for (const product of products) {
         await firestoreService.addProduct(product);
       }
-      
-      // Update localStorage cache
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(products));
+      // Only cache product count, not full data
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ count: products.length, lastSync: Date.now() }));
       console.log('✅ ProductService: Default products synced to Firebase successfully');
     } catch (error) {
       console.warn('⚠️ ProductService: Failed to sync defaults to Firebase:', error);
@@ -121,14 +118,13 @@ class ProductService {
   // Get all products with Firebase integration
   static async getAllProducts() {
     try {
-      // Try Firebase first if available
+      // Always use Firebase for product data
       if (firestoreService.isAvailable()) {
         const firebaseProducts = await firestoreService.getAllProducts();
-        
         if (firebaseProducts.length > 0) {
           console.log('✅ ProductService: Loaded', firebaseProducts.length, 'products from Firebase');
-          // Update localStorage cache
-          localStorage.setItem(this.STORAGE_KEY, JSON.stringify(firebaseProducts));
+          // Only cache product count, not full data
+          localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ count: firebaseProducts.length, lastSync: Date.now() }));
           return firebaseProducts;
         } else {
           // Initialize Firebase with defaults if empty
@@ -138,22 +134,13 @@ class ProductService {
           return defaults;
         }
       }
-      
-      // Fallback to localStorage
-      const products = localStorage.getItem(this.STORAGE_KEY);
-      if (!products) {
-        console.log('📱 ProductService: Using localStorage with defaults');
-        const defaultProducts = this.getDefaultProducts();
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(defaultProducts));
-        return defaultProducts;
-      }
-      return JSON.parse(products);
+      // Fallback: no localStorage for full product data
+      console.warn('⚠️ ProductService: Firebase unavailable, returning empty product list.');
+      return [];
     } catch (error) {
       console.error('⚠️ ProductService: Error loading products:', error);
-      // Final fallback to defaults
-      const defaults = this.getDefaultProducts();
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(defaults));
-      return defaults;
+      // Final fallback to defaults (do not cache)
+      return this.getDefaultProducts();
     }
   }
 
@@ -186,15 +173,12 @@ class ProductService {
     try {
       const products = await this.getAllProducts();
       console.log('ProductService: Adding product:', productData.name);
-      
-      // Generate new ID
-      const newId = Math.max(...products.map(p => p.id || 0)) + 1;
-      
+
       // Get next order number
       const maxOrder = Math.max(...products.map(p => p.order || 0));
-      
-      const newProduct = {
-        id: newId,
+
+      // Prepare product data (without id)
+      const newProductData = {
         name: productData.name || 'Untitled Product',
         price: parseFloat(productData.price) || 0,
         description: productData.description || '',
@@ -209,18 +193,21 @@ class ProductService {
       };
 
       // Add to Firebase first for cross-device sync
+      let addedProduct = null;
       try {
-        const firebaseProduct = await firestoreService.addProduct(newProduct);
-        console.log('ProductService: Product synced to Firebase:', firebaseProduct.name);
+        addedProduct = await firestoreService.addProduct(newProductData);
+        console.log('ProductService: Product synced to Firebase:', addedProduct.name);
       } catch (firebaseError) {
         console.warn('ProductService: Firebase sync failed, using localStorage only:', firebaseError);
+        // Fallback: generate a string id
+        addedProduct = { ...newProductData, id: Date.now().toString() };
       }
 
-      // Update localStorage cache
-      products.push(newProduct);
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(products));
-      console.log('ProductService: Product added successfully:', newProduct.name);
-      return newProduct;
+      // Only update product count in localStorage
+      products.push(addedProduct);
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ count: products.length, lastSync: Date.now() }));
+      console.log('ProductService: Product added successfully:', addedProduct.name);
+      return addedProduct;
     } catch (error) {
       console.error('ProductService: Error adding product:', error);
       throw error;
@@ -403,11 +390,30 @@ class ProductService {
     return errors;
   }
 
+  // Clear all products from Firebase
+  static async clearFirebaseProducts() {
+    if (!firestoreService.isAvailable()) return;
+    try {
+      const products = await firestoreService.getAllProducts();
+      for (const product of products) {
+        await firestoreService.deleteProduct(product.id);
+      }
+      console.log('✅ ProductService: Cleared all products from Firebase');
+    } catch (error) {
+      console.error('⚠️ ProductService: Failed to clear Firebase products:', error);
+    }
+  }
+
   // Reset to default products (for testing/debugging)
-  static resetToDefault() {
+  static async resetToDefault() {
     try {
       const defaultProducts = this.getDefaultProducts();
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(defaultProducts));
+      // Clear Firebase before syncing defaults
+      if (firestoreService.isAvailable()) {
+        await this.clearFirebaseProducts();
+        await this.syncDefaultsToFirebase(defaultProducts);
+      }
       console.log('ProductService: Reset to default products completed');
       return defaultProducts;
     } catch (error) {

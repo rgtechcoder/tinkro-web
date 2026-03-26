@@ -1,7 +1,7 @@
 // OLD: import React, { useState } from 'react';
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
-import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Header from '@/components/Header';
 import Home from '@/pages/Home';
 import Products from '@/pages/Products';
@@ -21,6 +21,11 @@ import ProductDetails from '@/pages/ProductDetails';
 import Checkout from '@/pages/Checkout';
 
 function App() {
+    // Helper to detect current route for conditional rendering
+    function usePath() {
+      const location = useLocation();
+      return location.pathname;
+    }
   const [cartItems, setCartItems] = useState(() => {
     try {
       const savedCart = localStorage.getItem('tinkro-cart-items');
@@ -160,49 +165,62 @@ function App() {
 
   return (
     <Router>
-      <Helmet>
-        <title>Tinkro - Robotics Kits for Students | Learn, Build, Innovate</title>
-        <meta name="description" content="Discover innovative robotics kits for students. Make learning fun with our educational STEM projects and programming kits." />
-        <meta name="robots" content="index, follow" />
-      </Helmet>
-      <div className="min-h-screen flex flex-col bg-white">
-        <Header 
-          cartItemsCount={cartItems.length}
-          setIsCartOpen={setIsCartOpen}
-          user={user}
-        />
-        <main className="flex-grow">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/products" element={<Products addToCart={addToCart} />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/auth" element={<AuthPage onAuthSuccess={(userData) => { setUser(userData); }} />} />
-            <Route path="/profile" element={<UserProfile />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/user-dashboard" element={user ? <UserDashboard user={user} onLogout={() => setUser(null)} onUserUpdate={refreshAppUser} /> : <AuthPage onAuthSuccess={(userData) => setUser(userData)} />} />
-            <Route path="/product/:productId" element={<ProductDetails />} />
-            <Route path="/checkout/:productId" element={<Checkout />} />
-            <Route path="*" element={<Home />} />
-          </Routes>
-        </main>
-        <ChatBot />
-        <Footer />
-        <Cart
-          isOpen={isCartOpen}
-          setIsOpen={setIsCartOpen}
-          cartItems={cartItems}
-          updateQuantity={updateCartQuantity}
-          removeItem={removeFromCart}
-          totalPrice={getTotalPrice()}
-          currentUserEmail={user && user.email ? user.email : ''}
-        />
-        <Toaster />
-        <SonnerToaster position="top-right" />
-      </div>
+      <AppContent />
     </Router>
   );
+  
+  // AppContent is a nested component to use useLocation
+  function AppContent() {
+    const path = usePath();
+    const isAdmin = path.startsWith('/admin');
+    return (
+      <>
+        <Helmet>
+          <title>Tinkro - Robotics Kits for Students | Learn, Build, Innovate</title>
+          <meta name="description" content="Discover innovative robotics kits for students. Make learning fun with our educational STEM projects and programming kits." />
+          <meta name="robots" content="index, follow" />
+        </Helmet>
+        <div className="min-h-screen flex flex-col bg-white">
+          {!isAdmin && (
+            <Header 
+              cartItemsCount={cartItems.length}
+              setIsCartOpen={setIsCartOpen}
+              user={user}
+            />
+          )}
+          <main className="flex-grow">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/products" element={<Products addToCart={addToCart} />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/auth" element={<AuthPage onAuthSuccess={(userData) => { setUser(userData); }} />} />
+              <Route path="/profile" element={<UserProfile />} />
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/user-dashboard" element={user ? <UserDashboard user={user} onLogout={() => setUser(null)} onUserUpdate={refreshAppUser} /> : <AuthPage onAuthSuccess={(userData) => setUser(userData)} />} />
+              <Route path="/product/:productId" element={<ProductDetails />} />
+              <Route path="/checkout/:productId" element={<Checkout />} />
+              <Route path="*" element={<Home />} />
+            </Routes>
+          </main>
+          <ChatBot />
+          {!isAdmin && <Footer />}
+          <Cart
+            isOpen={isCartOpen}
+            setIsOpen={setIsCartOpen}
+            cartItems={cartItems}
+            updateQuantity={updateCartQuantity}
+            removeItem={removeFromCart}
+            totalPrice={getTotalPrice()}
+            currentUserEmail={user && user.email ? user.email : ''}
+          />
+          <Toaster />
+          <SonnerToaster position="top-right" />
+        </div>
+      </>
+    );
+  }
 }
 
 export default App;

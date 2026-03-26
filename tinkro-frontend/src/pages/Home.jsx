@@ -1,4 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { Rocket, Users, Award, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Helmet } from 'react-helmet';
+import ATLParticles from '@/components/ATLParticles';
+import ProductService from '../services/ProductService';
+
 // --- MarqueeSlider: Continuous smooth scrolling image carousel ---
 function MarqueeSlider() {
   const images = [
@@ -11,32 +19,35 @@ function MarqueeSlider() {
   const allImages = [...images, ...images];
   return (
     <div className="marquee-slider">
-      <div className="marquee-track">
-        {allImages.map((src, i) => (
-          <img
-            src={src}
-            alt={`Unleash ${i % images.length + 1}`}
-            className="marquee-img"
-            key={i}
-            draggable={false}
-          />
-        ))}
-      </div>
+      {/* ...existing code... */}
     </div>
   );
 }
-import ATLParticles from '../components/ATLParticles';
-import { Helmet } from 'react-helmet';
-import { motion } from 'framer-motion';
-import { Rocket, Users, Award, ArrowRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+
+
+// ...existing code...
+
 
 export default function Home({ setCurrentPage }) {
-      // Scroll to top when Home mounts
-      useEffect(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, []);
-    const [showLearnMore, setShowLearnMore] = useState(false);
+  // Featured products state
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  // Learn More section state
+  const [showLearnMore, setShowLearnMore] = useState(false);
+
+  // Load featured products on mount
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const products = await ProductService.getFeaturedProducts();
+        if (isMounted) setFeaturedProducts(products || []);
+      } catch (err) {
+        setFeaturedProducts([]);
+      }
+    })();
+    return () => { isMounted = false; };
+  }, []);
+
   const features = [
     {
       icon: Rocket,
@@ -83,9 +94,17 @@ export default function Home({ setCurrentPage }) {
         <meta name="description" content="Welcome to Tinkro! Discover innovative robotics kits for school students. Make learning fun with hands-on STEM education." />
       </Helmet>
 
-      {/* Hero Section - Original Design */}
-      <section className="relative bg-tinkro-light-blue overflow-hidden">
-        <div className="container mx-auto px-4 py-20 md:py-28">
+      {/* Hero Section - Upgraded Robotics Brand Look */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-tinkro-blue via-tinkro-light-blue to-tinkro-orange min-h-[520px] flex items-center">
+        {/* Animated SVG Gears/Shapes */}
+        <svg className="absolute left-0 top-0 w-96 h-96 opacity-10 z-0" viewBox="0 0 400 400" fill="none">
+          <circle cx="200" cy="200" r="180" stroke="#00529A" strokeWidth="18" fill="#E6F4FF" />
+          <g>
+            <circle cx="200" cy="200" r="80" fill="#F58220" opacity="0.18" />
+            <rect x="120" y="120" width="160" height="160" rx="80" fill="#00529A" opacity="0.08" />
+          </g>
+        </svg>
+        <div className="container mx-auto px-4 py-20 md:py-28 relative z-10">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <motion.div
               initial={{ opacity: 0, x: -50 }}
@@ -93,28 +112,37 @@ export default function Home({ setCurrentPage }) {
               transition={{ duration: 0.8 }}
               className="relative z-10"
             >
-              <h1 className="text-4xl md:text-6xl font-extrabold mb-6 leading-tight text-tinkro-blue">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-tr from-tinkro-orange to-tinkro-blue shadow-lg animate-spin-slow">
+                  {/* Simple robot/gear icon */}
+                  <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="14" stroke="#F58220" strokeWidth="3"/><circle cx="16" cy="16" r="7" fill="#00529A"/><rect x="14" y="4" width="4" height="6" rx="2" fill="#00529A"/><rect x="14" y="22" width="4" height="6" rx="2" fill="#00529A"/><rect x="4" y="14" width="6" height="4" rx="2" fill="#00529A"/><rect x="22" y="14" width="6" height="4" rx="2" fill="#00529A"/></svg>
+                </span>
+                <span className="uppercase tracking-widest text-xs font-bold text-tinkro-orange">India's Top Robotics Brand</span>
+              </div>
+              <h1 className="text-4xl md:text-6xl font-extrabold mb-6 leading-tight text-tinkro-blue drop-shadow-lg">
                 Tinker Today, <br /> <span className="gradient-text">Robot Tomorrow.</span>
               </h1>
-              <p className="text-lg md:text-xl mb-8 text-gray-600">
-                Introducing Tinkro: STEM Learning Made Fun! Empowering students to build, code, and blast off into the world of robotics.
+              <p className="text-lg md:text-xl mb-8 text-gray-700 font-medium">
+                <span className="text-tinkro-orange font-bold">Tinkro</span> makes STEM learning fun! Empowering students to build, code, and blast off into the world of robotics with <span className="text-tinkro-blue font-bold">India's most creative kits</span>.
               </p>
               <div className="flex flex-wrap gap-4">
-                <Button
-                  size="lg"
-                  className="bg-tinkro-orange text-white hover:bg-orange-600 shadow-lg"
-                  onClick={() => setCurrentPage('products')}
-                >
-                  Explore Kits <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border-tinkro-blue text-tinkro-blue hover:bg-tinkro-blue/10"
-                  onClick={() => setCurrentPage('contact')}
-                >
-                  Contact Us
-                </Button>
+                <Link to="/products">
+                  <Button
+                    size="lg"
+                    className="bg-gradient-to-r from-tinkro-orange to-tinkro-blue text-white shadow-lg px-8 text-lg font-semibold hover:from-orange-600 hover:to-blue-800"
+                  >
+                    Explore Kits <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+                <Link to="/contact">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-tinkro-blue text-tinkro-blue hover:bg-tinkro-blue/10 px-8 text-lg font-semibold"
+                  >
+                    Contact Us
+                  </Button>
+                </Link>
               </div>
             </motion.div>
 
@@ -131,6 +159,56 @@ export default function Home({ setCurrentPage }) {
                 src="https://horizons-cdn.hostinger.com/e7c9821b-6b7a-44e2-b895-23441ddb63a1/b38127d5ea95fcb740734489af69d353.jpg" 
               />
             </motion.div>
+          </div>
+        </div>
+      </section>
+
+
+  {/* Features Section */}
+      {/* Top Robotics Kits Section (moved below features) */}
+      <section className="py-16 bg-gradient-to-b from-white to-blue-50">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 gradient-text">Top Robotics Kits</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">India’s most loved robotics kits for students and schools—trusted by educators, loved by innovators!</p>
+          </motion.div>
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+            {featuredProducts.map((product, i) => (
+              <motion.div
+                key={product.id}
+                initial={{ opacity: 0, y: 60, scale: 0.95 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.1 + i * 0.1, duration: 0.7, type: 'spring', bounce: 0.35 }}
+                whileHover={{ scale: 1.05, boxShadow: '0 8px 32px 0 rgba(80, 120, 255, 0.18)', y: -8 }}
+                className="relative bg-white rounded-3xl shadow-xl p-7 flex flex-col items-center border border-blue-100 hover:border-tinkro-blue transition-all group overflow-hidden"
+              >
+                <div className="relative w-28 h-28 mb-4">
+                  <img src={product.image} alt={product.name} className="w-28 h-28 object-cover rounded-xl shadow-lg group-hover:scale-105 transition-transform" />
+                  <span className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-gradient-to-tr from-tinkro-orange to-tinkro-blue flex items-center justify-center shadow group-hover:scale-110 transition-transform">
+                    <svg width="18" height="18" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="14" stroke="#F58220" strokeWidth="2"/><circle cx="16" cy="16" r="7" fill="#00529A"/></svg>
+                  </span>
+                </div>
+                <h3 className="text-lg font-bold mb-2 text-tinkro-blue text-center group-hover:text-tinkro-orange transition-colors">{product.name}</h3>
+                <p className="text-gray-600 text-sm mb-3 text-center">{product.description}</p>
+                <span className="text-xl font-bold text-tinkro-orange mb-2">₹{product.price}</span>
+                <Link to="/products" className="mt-auto">
+                  <Button size="sm" className="bg-tinkro-blue text-white hover:bg-orange-500 transition-colors">View Details</Button>
+                </Link>
+                {/* Animated border effect */}
+                <span className="absolute inset-0 rounded-3xl pointer-events-none border-2 border-transparent group-hover:border-tinkro-orange transition-all"></span>
+              </motion.div>
+            ))}
+          </div>
+          <div className="text-center mt-10">
+            <Link to="/products">
+              <Button size="lg" className="bg-tinkro-orange text-white hover:bg-orange-600 shadow-lg px-8 py-3 text-lg font-semibold">See All Products</Button>
+            </Link>
           </div>
         </div>
       </section>

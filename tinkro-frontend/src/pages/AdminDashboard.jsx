@@ -365,14 +365,10 @@ const AdminDashboard = () => {
     try {
       setIsLoading(true);
       console.log("Loading orders from OrderManager...");
-      
-      // Use OrderManager for real-time order data
-      const orderManager = new OrderManager();
-      const allOrders = orderManager.getAllOrders();
-      
+      // Use OrderManager singleton instance
+      const allOrders = OrderManager.getAllOrders();
       console.log(`Orders loaded: ${allOrders.length} orders found`);
       setOrders(allOrders);
-      
       // If no orders found, show empty state instead of creating dummy data
       if (allOrders.length === 0) {
         console.log("No orders found - showing empty state");
@@ -385,7 +381,6 @@ const AdminDashboard = () => {
           unread: true
         }]);
       }
-      
     } catch (error) {
       console.error('Error loading orders:', error);
       setOrders([]);
@@ -992,9 +987,8 @@ const AdminDashboard = () => {
 
   // Go back to main website function
   const goToWebsite = () => {
-    console.log("Going back to website...");
-    window.location.hash = '';
-    window.location.reload();
+    // Redirect to main website (update URL as needed)
+    window.location.href = "/"; // For local, or use "https://tinkro.in" for production
   };
 
   // Advanced Analytics & Stats
@@ -2637,7 +2631,6 @@ const AdminDashboard = () => {
         {/* Product Management Modal */}
         {showProductModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            {console.log('Product Modal is rendering...', { products: products, productsLength: products?.length })}
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] overflow-hidden flex flex-col">
               {/* Modal Header */}
               <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
@@ -2680,7 +2673,7 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex justify-center mt-4">
+                <div className="flex justify-center mt-4 space-x-4">
                   <button
                     onClick={() => {
                       setReopenProductModal(true);  // Set reopen flag
@@ -2691,6 +2684,25 @@ const AdminDashboard = () => {
                   >
                     <Plus className="h-4 w-4" />
                     <span>Add New Product</span>
+                  </button>
+                  <button
+                    onClick={async () => {
+                      // Reset to default products in localStorage
+                      await ProductService.resetToDefault();
+                      // Sync defaults to Firebase
+                      const defaults = ProductService.getDefaultProducts();
+                      await ProductService.syncDefaultsToFirebase(defaults);
+                      await loadProducts();
+                      alert('✅ Default products restored and synced to Firebase! All categories will reappear.');
+                      // Force page reload to ensure frontend loads new categories
+                      setTimeout(() => {
+                        window.location.reload();
+                      }, 500);
+                    }}
+                    className="px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:shadow-lg transition-all duration-300 flex items-center space-x-2"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    <span>Restore Default Products</span>
                   </button>
                 </div>
               </div>

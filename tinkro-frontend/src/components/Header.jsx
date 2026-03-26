@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ShoppingCart, Menu, X, User, LogOut, Package, Heart, MapPin, Settings, HelpCircle, Bell, CreditCard, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import firebaseAuthService from '../services/FirebaseAuthService';
 import firebaseNotificationService from '../services/FirebaseNotificationService';
 import firebaseWishlistService from '../services/FirebaseWishlistService';
@@ -206,22 +207,13 @@ const Header = ({
     }
   };
 
-  const navItems = [{
-    id: 'home',
-    label: 'Home'
-  }, {
-    id: 'products',
-    label: 'Products'
-  }, {
-    id: 'about',
-    label: 'About Us'
-  }, {
-    id: 'blog',
-    label: 'Blog'
-  }, {
-    id: 'contact',
-    label: 'Contact'
-  }];
+  const navItems = [
+    { path: '/', label: 'Home' },
+    { path: '/products', label: 'Products' },
+    { path: '/about', label: 'About Us' },
+    { path: '/blog', label: 'Blog' },
+    { path: '/contact', label: 'Contact' },
+  ];
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
       <div className="container mx-auto px-4 py-4">
@@ -230,35 +222,28 @@ const Header = ({
           <motion.div 
             initial={{ opacity: 0, x: -20 }} 
             animate={{ opacity: 1, x: 0 }} 
-            className="flex items-center space-x-3 cursor-pointer hover:scale-105 transition-transform" 
-            onClick={() => {
-              navigateToPage('home');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
+            className="flex items-center space-x-3 cursor-pointer hover:scale-105 transition-transform"
           >
-            <img 
-              src="/images/tinkro-logo.png" 
-              alt="Tinkro Logo" 
-              className="h-10 w-auto" 
-              onError={e => { e.target.onerror = null; e.target.src = '/favicon.ico'; }}
-            />
+            <Link to="/">
+              <img 
+                src="/images/tinkro-logo.png" 
+                alt="Tinkro Logo" 
+                className="h-10 w-auto" 
+                onError={e => { e.target.onerror = null; e.target.src = '/favicon.ico'; }}
+              />
+            </Link>
           </motion.div>
 
           <nav className="hidden md:flex items-center space-x-8">
-            {navItems.map(item => <button 
-              key={item.id} 
-              onClick={() => {
-                navigateToPage(item.id);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className={`text-sm font-medium transition-colors hover:scale-105 ${
-                currentPage === item.id 
-                  ? 'text-blue-600 font-semibold' 
-                  : 'text-gray-600 hover:text-blue-600'
-              }`}
-            >
-              {item.label}
-            </button>)}
+            {navItems.map(item => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`text-sm font-medium transition-colors hover:scale-105 ${location.pathname === item.path ? 'text-blue-600 font-semibold' : 'text-gray-600 hover:text-blue-600'}`}
+              >
+                {item.label}
+              </Link>
+            ))}
           </nav>
 
           <div className="flex items-center space-x-4">

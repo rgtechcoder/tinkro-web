@@ -1,5 +1,6 @@
 import React from 'react';
 import { Instagram, Mail, Phone, Youtube, MessageCircle, Linkedin, Twitter, Facebook } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Footer = ({ navigateToPage }) => {
   return (
@@ -18,18 +19,18 @@ const Footer = ({ navigateToPage }) => {
           <div>
             <span className="font-semibold text-lg mb-4 block">Quick Links</span>
             <div className="space-y-2">
-              <button onClick={() => navigateToPage('home')} className="block text-gray-300 hover:text-white transition-colors text-sm">
+              <Link to="/" className="block text-gray-300 hover:text-white transition-colors text-sm">
                 Home
-              </button>
-              <button onClick={() => navigateToPage('products')} className="block text-gray-300 hover:text-white transition-colors text-sm">
+              </Link>
+              <Link to="/products" className="block text-gray-300 hover:text-white transition-colors text-sm">
                 Products
-              </button>
-              <button onClick={() => navigateToPage('about')} className="block text-gray-300 hover:text-white transition-colors text-sm">
+              </Link>
+              <Link to="/about" className="block text-gray-300 hover:text-white transition-colors text-sm">
                 About Us
-              </button>
-              <button onClick={() => navigateToPage('blog')} className="block text-gray-300 hover:text-white transition-colors text-sm">
+              </Link>
+              <Link to="/blog" className="block text-gray-300 hover:text-white transition-colors text-sm">
                 Blog
-              </button>
+              </Link>
             </div>
           </div>
 
