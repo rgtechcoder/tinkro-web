@@ -18,7 +18,7 @@ const Products = ({ addToCart }) => {
     {
       id: 1,
       name: 'Beginner Robotics Kit',
-      price: 2499,
+      price: 11111,
       description: 'Perfect starter kit for class 6-8 students. Includes motors, sensors, and easy-to-follow guide.',
       image: 'https://images.unsplash.com/photo-1561557944-6e7860d1a7eb?w=500&q=80',
       category: 'Arduino Kits',

@@ -145,6 +145,16 @@ const Blog = () => {
     }
   };
 
+  // Scroll to top if already on /blog and user clicks Blog nav
+  React.useEffect(() => {
+    const handleNavClick = (e) => {
+      if (window.location.pathname === '/blog') {
+        setTimeout(() => window.scrollTo(0, 0), 10);
+      }
+    };
+    window.addEventListener('tinkro-nav-blog', handleNavClick);
+    return () => window.removeEventListener('tinkro-nav-blog', handleNavClick);
+  }, []);
   return (
     <>
       <Helmet>

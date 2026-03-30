@@ -4,9 +4,15 @@ import CustomerForm from '../components/CustomerForm';
 
 const Checkout = () => {
   const { productId } = useParams();
-  // TODO: Fetch product info and price using productId
-  // For now, use placeholder price
-  const totalPrice = 999;
+  // Get product from localStorage tinkro_buy_now
+  let product = null;
+  try {
+    const buyNowArr = JSON.parse(localStorage.getItem('tinkro_buy_now') || '[]');
+    if (Array.isArray(buyNowArr)) {
+      product = buyNowArr.find(p => String(p.id) === String(productId)) || buyNowArr[0];
+    }
+  } catch (e) {}
+  const totalPrice = product?.price || 0;
   const handleSubmit = (data) => {
     // Handle order submission
     alert('Order placed!');

@@ -2,6 +2,15 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+
+// ScrollToTop component: scrolls to top on every route change
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
 import Header from '@/components/Header';
 import Home from '@/pages/Home';
 import Products from '@/pages/Products';
@@ -19,6 +28,7 @@ import { Toaster as SonnerToaster } from 'sonner';
 import ChatBot from './chatbot/ChatBot';
 import ProductDetails from '@/pages/ProductDetails';
 import Checkout from '@/pages/Checkout';
+import LabQuoteForm from '@/pages/LabQuoteForm';
 
 function App() {
     // Helper to detect current route for conditional rendering
@@ -165,6 +175,7 @@ function App() {
 
   return (
     <Router>
+      <ScrollToTop />
       <AppContent />
     </Router>
   );
@@ -190,7 +201,7 @@ function App() {
           )}
           <main className="flex-grow">
             <Routes>
-              <Route path="/" element={<Home />} />
+              <Route path="/" element={<Home addToCart={addToCart} />} />
               <Route path="/products" element={<Products addToCart={addToCart} />} />
               <Route path="/about" element={<About />} />
               <Route path="/blog" element={<Blog />} />
@@ -201,6 +212,7 @@ function App() {
               <Route path="/user-dashboard" element={user ? <UserDashboard user={user} onLogout={() => setUser(null)} onUserUpdate={refreshAppUser} /> : <AuthPage onAuthSuccess={(userData) => setUser(userData)} />} />
               <Route path="/product/:productId" element={<ProductDetails />} />
               <Route path="/checkout/:productId" element={<Checkout />} />
+              <Route path="/lab-setup/:labType" element={<LabQuoteForm />} />
               <Route path="*" element={<Home />} />
             </Routes>
           </main>

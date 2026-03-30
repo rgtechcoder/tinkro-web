@@ -19,17 +19,20 @@ const Footer = ({ navigateToPage }) => {
           <div>
             <span className="font-semibold text-lg mb-4 block">Quick Links</span>
             <div className="space-y-2">
-              <Link to="/" className="block text-gray-300 hover:text-white transition-colors text-sm">
+              <Link to="/" className="block text-gray-300 hover:text-white transition-colors text-sm" onClick={e => { if (window.location.pathname === '/') { setTimeout(() => window.scrollTo(0, 0), 10); } }}>
                 Home
               </Link>
-              <Link to="/products" className="block text-gray-300 hover:text-white transition-colors text-sm">
+              <Link to="/products" className="block text-gray-300 hover:text-white transition-colors text-sm" onClick={e => { if (window.location.pathname === '/products') { setTimeout(() => window.scrollTo(0, 0), 10); } else { window.dispatchEvent(new Event('tinkro-nav-products')); } }}>
                 Products
               </Link>
-              <Link to="/about" className="block text-gray-300 hover:text-white transition-colors text-sm">
+              <Link to="/about" className="block text-gray-300 hover:text-white transition-colors text-sm" onClick={e => { if (window.location.pathname === '/about') { setTimeout(() => window.scrollTo(0, 0), 10); } else { window.dispatchEvent(new Event('tinkro-nav-about')); } }}>
                 About Us
               </Link>
-              <Link to="/blog" className="block text-gray-300 hover:text-white transition-colors text-sm">
+              <Link to="/blog" className="block text-gray-300 hover:text-white transition-colors text-sm" onClick={e => { if (window.location.pathname === '/blog') { setTimeout(() => window.scrollTo(0, 0), 10); } else { window.dispatchEvent(new Event('tinkro-nav-blog')); } }}>
                 Blog
+              </Link>
+              <Link to="/contact" className="block text-gray-300 hover:text-white transition-colors text-sm" onClick={e => { if (window.location.pathname === '/contact') { setTimeout(() => window.scrollTo(0, 0), 10); } else { window.dispatchEvent(new Event('tinkro-nav-contact')); } }}>
+                Contact
               </Link>
             </div>
           </div>

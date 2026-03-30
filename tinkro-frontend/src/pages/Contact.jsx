@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+//import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Mail, Phone, Instagram, Send } from 'lucide-react';
@@ -8,7 +8,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 import firebaseContactService from '../services/FirebaseContactService';
 
+import React, { useEffect, useState } from 'react';
 const Contact = () => {
+  // Scroll to top if already on /contact and user clicks Contact nav
+  useEffect(() => {
+    const handleNavClick = (e) => {
+      if (window.location.pathname === '/contact') {
+        setTimeout(() => window.scrollTo(0, 0), 10);
+      }
+    };
+    window.addEventListener('tinkro-nav-contact', handleNavClick);
+    return () => window.removeEventListener('tinkro-nav-contact', handleNavClick);
+  }, []);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -68,15 +79,15 @@ const Contact = () => {
         <title>Contact Us - Tinkro | Get in Touch</title>
         <meta name="description" content="Contact Tinkro for robotics kit inquiries, bulk orders, or support. Reach us via email, phone, or social media." />
       </Helmet>
-      <div className="py-20 bg-gray-50">
+      <div className="pt-2 pb-8 bg-gray-50">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-16"
+            className="text-center mb-8"
           >
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 gradient-text">Get in Touch</h1>
-            <p className="text-gray-600 max-w-2xl mx-auto text-lg">
+            <h1 className="text-4xl md:text-5xl font-bold mb-2 gradient-text mt-0 pt-0">Get in Touch</h1>
+            <p className="text-gray-600 max-w-2xl mx-auto text-lg mt-0 pt-0">
               Have questions about our robotics kits? We'd love to hear from you!
             </p>
           </motion.div>

@@ -27,6 +27,16 @@ const About = () => {
     },
   ];
 
+  // Scroll to top if already on /about and user clicks About nav
+  React.useEffect(() => {
+    const handleNavClick = (e) => {
+      if (window.location.pathname === '/about') {
+        setTimeout(() => window.scrollTo(0, 0), 10);
+      }
+    };
+    window.addEventListener('tinkro-nav-about', handleNavClick);
+    return () => window.removeEventListener('tinkro-nav-about', handleNavClick);
+  }, []);
   return (
     <>
       <Helmet>

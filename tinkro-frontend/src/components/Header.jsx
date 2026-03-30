@@ -6,6 +6,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import firebaseAuthService from '../services/FirebaseAuthService';
 import firebaseNotificationService from '../services/FirebaseNotificationService';
 import firebaseWishlistService from '../services/FirebaseWishlistService';
+//import { useNavigate } from 'react-router-dom';
 const Header = ({
   currentPage,
   navigateToPage,
@@ -13,6 +14,7 @@ const Header = ({
   setIsCartOpen,
   user: propUser
 }) => {
+  const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(propUser);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -210,13 +212,21 @@ const Header = ({
   const navItems = [
     { path: '/', label: 'Home' },
     { path: '/products', label: 'Products' },
+    // Lab Setup will be handled separately
     { path: '/about', label: 'About Us' },
     { path: '/blog', label: 'Blog' },
     { path: '/contact', label: 'Contact' },
   ];
+
+  const [showLabDropdown, setShowLabDropdown] = useState(false);
+  const labCategories = [
+    { path: '/lab-setup/atal-tinkering-lab', label: 'Atal Tinkering Lab' },
+    { path: '/lab-setup/pm-shri-robotics-lab', label: 'PM Shri Robotics Lab' },
+    { path: '/lab-setup/stem-robotics-lab', label: 'STEM and Robotics Lab' },
+  ];
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
-      <div className="container mx-auto px-4 py-4">
+    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-lg transition-all duration-300">
+      <div className="container mx-auto px-4 py-1 md:py-2">
         <div className="flex items-center justify-between">
           {/* Logo - Optimized for speed */}
           <motion.div 
@@ -224,22 +234,81 @@ const Header = ({
             animate={{ opacity: 1, x: 0 }} 
             className="flex items-center space-x-3 cursor-pointer hover:scale-105 transition-transform"
           >
-            <Link to="/">
+            <Link to="/" onClick={() => setTimeout(() => window.scrollTo(0, 0), 10)}>
               <img 
-                src="/images/tinkro-logo.png" 
-                alt="Tinkro Logo" 
-                className="h-10 w-auto" 
+                src="/PNG Logo Tinkro.png" 
+                alt="Tinkro Logo"
+                style={{ maxHeight: '60px', width: 'auto', maxWidth: '260px', objectFit: 'contain', display: 'block', margin: '0', padding: '0' }}
+                className="logo-img"
                 onError={e => { e.target.onerror = null; e.target.src = '/favicon.ico'; }}
               />
             </Link>
           </motion.div>
 
           <nav className="hidden md:flex items-center space-x-8">
-            {navItems.map(item => (
+            {navItems.slice(0,2).map(item => (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`text-sm font-medium transition-colors hover:scale-105 ${location.pathname === item.path ? 'text-blue-600 font-semibold' : 'text-gray-600 hover:text-blue-600'}`}
+                onClick={() => setTimeout(() => window.scrollTo(0, 0), 10)}
+                className={`relative text-sm font-medium px-2 py-1 transition-colors duration-200
+                  ${location.pathname === item.path
+                    ? 'text-blue-600 font-semibold nav-underline-active'
+                    : 'text-gray-600 hover:text-blue-600 nav-underline'
+                  }`}
+              >
+                {item.label}
+              </Link>
+            ))}
+            {/* Lab Setup Dropdown */}
+            <div className="relative">
+              <button
+                className={`flex items-center gap-1 text-sm font-medium transition-colors hover:scale-105 ${showLabDropdown ? 'text-blue-600 font-semibold' : 'text-gray-600 hover:text-blue-600'}`}
+                type="button"
+                onClick={e => {
+                  e.stopPropagation();
+                  setShowLabDropdown(v => !v);
+                }}
+                aria-haspopup="true"
+                aria-expanded={showLabDropdown}
+              >
+                Lab Setup <ChevronDown className="w-4 h-4" />
+              </button>
+              {showLabDropdown && (
+                <div
+                  className="absolute left-0 mt-2 w-60 rounded-xl shadow-2xl bg-white border border-gray-200 z-50 animate-fadeIn"
+                  onClick={e => e.stopPropagation()}
+                >
+                  {labCategories.map(cat => (
+                    <Link
+                      key={cat.path}
+                      to={cat.path}
+                      className="block px-6 py-3 text-gray-800 hover:bg-blue-50 hover:text-blue-700 text-base font-semibold transition-colors rounded-lg"
+                      onClick={() => setShowLabDropdown(false)}
+                    >
+                      {cat.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+              {/* Click outside to close */}
+              {showLabDropdown && (
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowLabDropdown(false)}
+                  style={{ cursor: 'default' }}
+                />
+              )}
+            </div>
+            {navItems.slice(2).map(item => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`relative text-sm font-medium px-2 py-1 transition-colors duration-200
+                  ${location.pathname === item.path
+                    ? 'text-blue-600 font-semibold nav-underline-active'
+                    : 'text-gray-600 hover:text-blue-600 nav-underline'
+                  }`}
               >
                 {item.label}
               </Link>
@@ -374,9 +443,10 @@ const Header = ({
 
                     {/* Menu Items - Compact */}
                     <div className="py-1">
+
                       <button
                         onClick={() => {
-                          navigateToPage('user-dashboard');
+                          navigate('/user-dashboard');
                           setShowUserMenu(false);
                         }}
                         className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
@@ -384,10 +454,10 @@ const Header = ({
                         <User className="h-4 w-4" />
                         <span>My Profile</span>
                       </button>
-                      
+
                       <button
                         onClick={() => {
-                          navigateToPage('user-dashboard');
+                          navigate('/user-dashboard');
                           setShowUserMenu(false);
                           setTimeout(() => {
                             window.dispatchEvent(new CustomEvent('setDashboardTab', { detail: 'orders' }));
@@ -401,7 +471,7 @@ const Header = ({
 
                       <button
                         onClick={() => {
-                          navigateToPage('user-dashboard');
+                          navigate('/user-dashboard');
                           setShowUserMenu(false);
                           setTimeout(() => {
                             window.dispatchEvent(new CustomEvent('setDashboardTab', { detail: 'wishlist' }));
@@ -415,7 +485,7 @@ const Header = ({
 
                       <button
                         onClick={() => {
-                          navigateToPage('user-dashboard');
+                          navigate('/user-dashboard');
                           setShowUserMenu(false);
                           setTimeout(() => {
                             window.dispatchEvent(new CustomEvent('setDashboardTab', { detail: 'support' }));

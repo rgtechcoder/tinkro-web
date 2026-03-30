@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import authService from '../services/SimpleAuthService';
 import firebaseWishlistService from '../services/FirebaseWishlistService';
+import OrderManager from '../services/OrderManager';
 
 const UserDashboard = ({ user, onLogout, setCurrentPage, onUserUpdate }) => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -49,22 +50,21 @@ const UserDashboard = ({ user, onLogout, setCurrentPage, onUserUpdate }) => {
     const loadDashboardData = async () => {
       if (user) {
         const userId = user.uid || user.id;
-        
         try {
           // Load wishlist from Firebase
           const userWishlist = await firebaseWishlistService.getUserWishlist(userId);
-          console.log('📊 Dashboard loaded wishlist from Firebase:', userWishlist.length, 'items');
-          
+          // Load orders from OrderManager (localStorage)
+          const userOrders = OrderManager.getCustomerOrders(user.email || userId);
           setUserData({
             ...user,
             joinedDate: user.createdAt || new Date().toISOString(),
-            totalOrders: 0,
-            totalSpent: 0,
+            totalOrders: userOrders.length,
+            totalSpent: userOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0),
             loyaltyPoints: 100,
             membershipLevel: 'Silver',
             stats: {
-              totalOrders: 0,
-              totalSpent: 0,
+              totalOrders: userOrders.length,
+              totalSpent: userOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0),
               wishlistItems: Array.isArray(userWishlist) ? userWishlist.length : 0,
               loyaltyPoints: 100
             }
@@ -73,18 +73,17 @@ const UserDashboard = ({ user, onLogout, setCurrentPage, onUserUpdate }) => {
           console.error('❌ Error loading dashboard data:', error);
           // Fallback to localStorage
           const localWishlist = JSON.parse(localStorage.getItem(`wishlist_${userId}`) || '[]');
-          console.log('📊 Dashboard fallback to localStorage:', localWishlist.length, 'items');
-          
+          const userOrders = OrderManager.getCustomerOrders(user.email || userId);
           setUserData({
             ...user,
             joinedDate: user.createdAt || new Date().toISOString(),
-            totalOrders: 0,
-            totalSpent: 0,
+            totalOrders: userOrders.length,
+            totalSpent: userOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0),
             loyaltyPoints: 100,
             membershipLevel: 'Silver',
             stats: {
-              totalOrders: 0,
-              totalSpent: 0,
+              totalOrders: userOrders.length,
+              totalSpent: userOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0),
               wishlistItems: Array.isArray(localWishlist) ? localWishlist.length : 0,
               loyaltyPoints: 100
             }
@@ -92,7 +91,6 @@ const UserDashboard = ({ user, onLogout, setCurrentPage, onUserUpdate }) => {
         }
       }
     };
-    
     loadDashboardData();
   }, [user]);
 

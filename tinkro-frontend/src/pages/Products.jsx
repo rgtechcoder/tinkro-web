@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingCart, ChevronLeft, ChevronRight, Star, Heart } from 'lucide-react';
@@ -6,7 +7,19 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import firebaseWishlistService from '@/services/FirebaseWishlistService';
 
-const Products = ({ addToCart, setCurrentPage: navigateToPage }) => {
+const Products = ({ addToCart }) => {
+  const navigate = useNavigate();
+  // Scroll to top if already on /products and user clicks Products nav
+  useEffect(() => {
+    const handleNavClick = (e) => {
+      if (window.location.pathname === '/products') {
+        setTimeout(() => window.scrollTo(0, 0), 10);
+      }
+    };
+    // Listen for custom event from nav (optional, for global nav)
+    window.addEventListener('tinkro-nav-products', handleNavClick);
+    return () => window.removeEventListener('tinkro-nav-products', handleNavClick);
+  }, []);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState(['All']);
   const [isLoading, setIsLoading] = useState(true);
@@ -15,6 +28,7 @@ const Products = ({ addToCart, setCurrentPage: navigateToPage }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [wishlist, setWishlist] = useState([]);
   const [user, setUser] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Check if user is logged in
   useEffect(() => {
@@ -149,10 +163,18 @@ const Products = ({ addToCart, setCurrentPage: navigateToPage }) => {
   
   // Optimized filtering with useMemo
   const filteredProducts = useMemo(() => {
-    return selectedCategory === 'All' 
+    let filtered = selectedCategory === 'All' 
       ? products 
       : products.filter(product => product.category === selectedCategory);
-  }, [products, selectedCategory]);
+    if (searchTerm.trim() !== "") {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(product =>
+        product.name.toLowerCase().includes(term) ||
+        (product.description && product.description.toLowerCase().includes(term))
+      );
+    }
+    return filtered;
+  }, [products, selectedCategory, searchTerm]);
 
   // Optimized pagination with useMemo
   const { totalPages, visibleProducts } = useMemo(() => {
@@ -305,24 +327,46 @@ const Products = ({ addToCart, setCurrentPage: navigateToPage }) => {
           </motion.p>
         </div>
 
-        {/* Category Filter */}
+        {/* Search Bar above Categories (matches screenshot: search above, categories below) */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           className="mb-12"
         >
-          <div className="flex flex-wrap justify-center gap-4">
-            {categories.map((category) => (
-              <Button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                variant={selectedCategory === category ? "default" : "outline"}
-                className="px-6 py-2 rounded-full transition-all duration-300"
-              >
-                {category}
-              </Button>
-            ))}
+          <div className="flex flex-col w-full max-w-5xl mx-auto">
+            {/* Search Bar - right aligned above */}
+            <div className="w-full flex justify-end mb-4">
+              <div className="relative w-full max-w-sm">
+                <input
+                  id="product-search"
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-full bg-white text-gray-700 text-base shadow focus:outline-none focus:ring-2 focus:ring-blue-200 transition-all duration-300 placeholder-gray-400"
+                  style={{ boxShadow: '0 2px 12px 0 rgba(30,64,175,0.07)', fontWeight: 500, fontSize: '1rem' }}
+                  autoComplete="off"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35m1.35-5.15a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </span>
+              </div>
+            </div>
+            {/* Category Filter - below search */}
+            <div className="flex flex-wrap justify-center gap-4 w-full">
+              {categories.map((category) => (
+                <Button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  variant={selectedCategory === category ? "default" : "outline"}
+                  className="px-8 py-3 rounded-full font-medium text-lg shadow-sm border border-blue-100 hover:bg-blue-50 transition-all duration-200"
+                  style={{ minWidth: 120 }}
+                >
+                  {category}
+                </Button>
+              ))}
+            </div>
           </div>
         </motion.div>
 
@@ -423,9 +467,8 @@ const Products = ({ addToCart, setCurrentPage: navigateToPage }) => {
                           </Button>
                           <Button
                             onClick={() => {
-                              // Direct checkout: create a cart with only this product and go to checkout page
                               localStorage.setItem('tinkro_buy_now', JSON.stringify([product]));
-                              if (navigateToPage) navigateToPage('checkout', { buyNow: true });
+                              navigate(`/checkout/${product.id}`);
                             }}
                             disabled={product.stock === 0}
                             className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors duration-200 flex items-center gap-2"

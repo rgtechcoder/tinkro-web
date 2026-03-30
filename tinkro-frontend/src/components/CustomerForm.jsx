@@ -106,16 +106,17 @@ const CustomerForm = ({ onSubmit, totalPrice, onCancel, currentUserEmail }) => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-screen h-screen min-h-screen flex flex-col p-0 relative z-30 bg-gray-50"
+      className="flex items-center justify-center min-h-screen w-full bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-2"
       style={{ boxShadow: 'none' }}
       onClick={e => e.stopPropagation()}
     >
-      {/* Decorative Top Bar */}
-      <div className="h-2 w-full bg-gradient-to-r from-blue-500 via-purple-400 to-pink-400" />
-      <form onSubmit={handleSubmitWithPromo} className="flex-1 overflow-y-auto w-full" style={{ minHeight: 0 }}>
+      <div className="w-full max-w-md mx-auto bg-white rounded-2xl shadow-2xl border border-blue-100/60 relative overflow-hidden max-h-[90vh] my-4 flex flex-col" style={{ boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.12)' }}>
+        {/* Decorative Top Bar */}
+        <div className="h-2 w-full bg-gradient-to-r from-blue-500 via-purple-400 to-pink-400" />
+        <form onSubmit={handleSubmitWithPromo} className="px-6 pt-6 pb-2 flex-1 overflow-y-auto w-full" style={{ minHeight: 0, maxHeight: 'calc(90vh - 32px)' }}>
         {/* Header with Close Button */}
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-2xl font-bold text-blue-800 tracking-tight flex-1 text-left">Checkout</h3>
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-2xl font-extrabold text-blue-800 tracking-tight flex-1 text-left drop-shadow-sm">Checkout</h3>
           <button
             type="button"
             onClick={onCancel}
@@ -379,9 +380,10 @@ const CustomerForm = ({ onSubmit, totalPrice, onCancel, currentUserEmail }) => {
         >
           Proceed to Payment ₹{finalPrice}
         </Button>
-      </form>
-      {/* Decorative Bottom Bar - subtle, no radius */}
-      <div className="h-2 w-full bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400" />
+        </form>
+        {/* Decorative Bottom Bar - subtle, no radius */}
+        <div className="h-2 w-full bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400" />
+      </div>
     </motion.div>
   );
 };
